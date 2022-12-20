@@ -7,7 +7,7 @@ import logging
 import types
 import typing
 from collections.abc import Callable, Mapping
-from typing import Any, Protocol, TypedDict, TypeVar, cast
+from typing import Any, Protocol, TypedDict, cast
 
 import pydantic
 from django.core.exceptions import ObjectDoesNotExist, ValidationError
@@ -15,7 +15,6 @@ from django.db import transaction
 from django.http import Http404, HttpRequest, HttpResponse, JsonResponse
 from django.views.decorators.http import require_http_methods
 from pydantic.json import pydantic_encoder
-from rest_framework import serializers
 
 from .type_utils import (
     is_list,
@@ -304,11 +303,6 @@ def _get_body_parser(*, parameter: inspect.Parameter) -> BodyParser:
     if body_is_list:
         annotation = unwrap_list_item_type(type_annotation=annotation)
 
-    if issubclass(annotation, serializers.Serializer):
-        if body_is_list:
-            raise NotImplementedError()
-        return _serializer_parser(serializer_cls=annotation)
-
     if issubclass(annotation, pydantic.BaseModel):
         return _pydantic_parser(model_cls=annotation, body_is_list=body_is_list)
 
@@ -316,18 +310,6 @@ def _get_body_parser(*, parameter: inspect.Parameter) -> BodyParser:
         f"Annotation for body parameter must be a django-rest-framework or pydantic serializer class, the "
         f"current type annotation is: {annotation}"
     )
-
-
-Serializer = TypeVar("Serializer", bound=serializers.Serializer)
-
-
-def _serializer_parser(*, serializer_cls: type[Serializer]) -> BodyParser:
-    def parser(*, request: HttpRequest) -> Serializer:
-        serializer = serializer_cls(data=json.loads(request.body))
-        serializer.is_valid(raise_exception=True)
-        return serializer
-
-    return parser
 
 
 def _pydantic_parser(
@@ -456,9 +438,7 @@ class PydanticErrorDict(TypedDict):
 
 def handle_validation_error(
     *,
-    exception: (
-        ValidationError | pydantic.ValidationError | serializers.ValidationError
-    ),
+    exception: (ValidationError | pydantic.ValidationError),
 ) -> HttpResponse:
 
     errors: list[str]
