@@ -217,6 +217,12 @@ def _get_validator(parameter: inspect.Parameter) -> Validator:
 
     param_is_optional = is_optional(annotation)
 
+    if param_is_optional and parameter.default is inspect.Parameter.empty:
+        raise ValueError(
+            f"Parameter {parameter.name} specified as an optional param must have a"
+            f" default value."
+        )
+
     if annotation is str or (param_is_optional and unwrap_optional(annotation) is str):
         return lambda value, query_param_name: value
 
@@ -228,10 +234,14 @@ def _get_validator(parameter: inspect.Parameter) -> Validator:
     ):
         return _validate_date
 
-    if annotation is bool:
+    if annotation is bool or (
+        param_is_optional and unwrap_optional(annotation) is bool
+    ):
         return _validate_bool
 
-    raise ValueError(f"Unsupported type annotation for query param: {annotation}")
+    raise ValueError(
+        f"Unsupported type annotation for query param {parameter.name}: {annotation}"
+    )
 
 
 def _get_query_param_parser(
