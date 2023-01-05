@@ -1,0 +1,4 @@
+SECRET_KEY = "asdf"
+USE_TZ = True
+
+API_TOOLS_DEFAULT_ATOMIC = False

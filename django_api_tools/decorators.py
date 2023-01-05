@@ -10,6 +10,7 @@ from collections.abc import Callable, Mapping
 from typing import Any, Protocol, TypedDict, cast
 
 import pydantic
+from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist, ValidationError
 from django.db import transaction
 from django.http import Http404, HttpRequest, HttpResponse, JsonResponse
@@ -30,9 +31,10 @@ def api(
     *,
     method: str,
     query_params: list[str] | None = None,
-    login_required: bool = True,
+    login_required: bool | None = None,
     response_status: int = 200,
-    atomic: bool = True,
+    atomic: bool | None = None,
+    auth_check: Callable[..., Any] | None = None,
 ) -> Callable[[Callable[..., Any]], Callable[..., HttpResponse]]:
     """
     Defines an API view. This handles validation of query parameters, parsing of
@@ -60,6 +62,23 @@ def api(
     nothing is done to that response. In all other case the returned object is
     attempted to be encoded to JSON.
     """
+
+    login_required = (
+        login_required
+        if login_required is not None
+        else getattr(settings, "API_TOOLS_DEFAULT_LOGIN_REQUIRED", True)
+    )
+    atomic = (
+        atomic
+        if atomic is not None
+        else getattr(settings, "API_TOOLS_DEFAULT_ATOMIC", True)
+    )
+
+    auth_check = (
+        auth_check
+        if auth_check is not None
+        else getattr(settings, "API_TOOLS_AUTH_CHECK", lambda request: False)
+    )
 
     def decorator(func: Callable[..., Any]) -> Callable[..., HttpResponse]:
 
@@ -90,7 +109,7 @@ def api(
 
             # Check if the view requires the user to be logged in and if so make
             # sure the user is actually logged in.
-            if login_required and not request.user.is_authenticated:
+            if login_required and not auth_check(request):
                 return JsonResponse({"errors": ["Login required"]}, status=401)
 
             try:
@@ -106,7 +125,6 @@ def api(
             except (
                 ValidationError,
                 pydantic.ValidationError,
-                # serializers.ValidationError,
             ) as e:
                 # Normalize and return a unified error message payload
                 return handle_validation_error(exception=e)
@@ -336,6 +354,9 @@ def _pydantic_parser(
         if body_is_list:
             if not isinstance(data, list):
                 raise ValidationError("Expected request body to be a list")
+
+            if not len(data):
+                raise ValidationError("Empty list not allowed")
 
             result = []
             for i, element in enumerate(data):
