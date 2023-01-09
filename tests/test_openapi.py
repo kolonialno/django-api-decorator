@@ -1,13 +1,12 @@
 import datetime
 from enum import Enum
-from unittest import mock
 
-from django.http import JsonResponse
 from django.test.utils import override_settings
 from django.urls import path
+from pydantic import BaseModel
+
 from django_api_tools.decorators import api
 from django_api_tools.openapi import generate_api_spec
-from pydantic import BaseModel
 
 urlpatterns = None
 

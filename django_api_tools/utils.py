@@ -29,8 +29,8 @@ def method_router(csrf_exempt: bool | None = None, **views):
         }
         if len(csrf_exempt_values) > 1:
             raise RuntimeError(
-                "You are using method_router with views that have different csrf_exempt values. "
-                "This will cause none of the views to be csrf_exempt.\n"
+                "You are using method_router with views that have different csrf_exempt"
+                " values. This will cause none of the views to be csrf_exempt.\n"
                 "Either use csrf_exempt on all views or none."
             )
         csrf_exempt = all(csrf_exempt_values)

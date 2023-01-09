@@ -55,7 +55,8 @@ def api(
 
     The request body parsing is done by inspecting the view parameter types. If
     the view has a body parameter, we will try to decode the payload to that
-    type. Currently Django Rest Framework serializers and pydantic models are are supported.
+    type. Currently Django Rest Framework serializers and pydantic models are are
+     supported.
 
     Similarly the response body is encoded based on the type annotation for the
     return type. If the view is type annotated to return an HttpResponse object
@@ -335,8 +336,8 @@ def _get_body_parser(*, parameter: inspect.Parameter) -> BodyParser:
         return _pydantic_parser(model_cls=annotation, body_is_list=body_is_list)
 
     raise ValueError(
-        f"Annotation for body parameter must be a django-rest-framework or pydantic serializer class, the "
-        f"current type annotation is: {annotation}"
+        f"Annotation for body parameter must be a django-rest-framework or pydantic "
+        f"serializer class, the current type annotation is: {annotation}"
     )
 
 

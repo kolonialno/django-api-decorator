@@ -4,8 +4,9 @@ from unittest import mock
 from django.http import JsonResponse
 from django.test.utils import override_settings
 from django.urls import path
-from django_api_tools.decorators import api
 from pydantic import BaseModel
+
+from django_api_tools.decorators import api
 
 urlpatterns = None
 
@@ -81,9 +82,9 @@ def test_login_required(client):
 @override_settings(ROOT_URLCONF=__name__)
 def test_url_path(client):
     """
-    Tests URL paths with the decorator. The decorator doesn't touch the parameters currently, so we
-    are essentially testing Django internals, but it is good to have this check in case we start
-    altering params.
+    Tests URL paths with the decorator. The decorator doesn't touch the parameters
+    currently, so we are essentially testing Django internals, but it is good to have
+    this check in case we start altering params.
     """
 
     @api(method="GET", login_required=False)
@@ -152,14 +153,16 @@ def test_url_path_and_query(client):
         # Include some optional values
         assert (
             client.get(
-                "/33/test?num=3&date=2020-01-01&string=abc&boolean=false&opt_num=1&opt_date=2022-01-01"
+                "/33/test?num=3&date=2020-01-01&string=abc&boolean=false&opt_num=1"
+                "&opt_date=2022-01-01"
             ).status_code
             == 200
         )
         # Include all optional values
         assert (
             client.get(
-                "/33/test?num=3&date=2020-01-01&string=abc&boolean=false&opt_num=1&opt_date=2022-01-01"
+                "/33/test?num=3&date=2020-01-01&string=abc&boolean=false&opt_num=1"
+                "&opt_date=2022-01-01"
                 "&opt_string=123&opt_boolean=1"
             ).status_code
             == 200
@@ -309,7 +312,8 @@ def test_parsing_list(client):
             ).status_code
             == 200
         )
-        # Check that field errors propagate. Only errors from the first element are shown.
+        # Check that field errors propagate. Only errors from the first element
+        # are shown.
         response = client.post(
             "/",
             data=[{"num": "x", "d": "2022-01-01"}, {"num": "x", "d": "2022-31-41"}],

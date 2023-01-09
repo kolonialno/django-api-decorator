@@ -1,0 +1,43 @@
+name: lint
+
+on: push
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        check:
+          - isort --check .
+          - black --check .
+          - flake8 .
+        python_version: ["3.10"]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Cache Poetry
+        uses: actions/cache@v3
+        with:
+          path: .venv
+          key: ${{ runner.os }}-${{ matrix.python_version }}-poetry-${{ hashFiles('poetry.lock') }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python_version }}
+
+      - name: Set up Poetry
+        uses: snok/install-poetry@v1.3
+        with:
+          virtualenvs-in-project: true
+
+      - name: Install dependencies
+        run: |
+          poetry install
+
+      - name: Run linter
+        run: |
+          poetry run ${{ matrix.check }}

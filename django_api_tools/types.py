@@ -10,7 +10,8 @@ class FieldError(TypedDict):
 @dataclass
 class ApiMeta:
     """
-    Dataclass used on @api decorated views to preserve some information that cannot be inferred when inspecting the view.
+    Dataclass used on @api decorated views to preserve some information that cannot
+    be inferred when inspecting the view.
     """
 
     method: str

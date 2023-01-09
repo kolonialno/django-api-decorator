@@ -32,7 +32,8 @@ schema_ref = "#/components/schemas/{model}"
 
 def is_type_supported(t: type) -> bool:
     """
-    Controls whether or not we support the provided type as request body or response data.
+    Controls whether or not we support the provided type as request body or response
+    data.
     """
 
     try:
@@ -56,7 +57,8 @@ def name_for_type(t: type) -> str:
 
 def schema_type_ref(t: type, *, is_list: bool = False) -> dict[str, Any]:
     """
-    Returns a openapi reference to the provided type, and optionally wraps it in an array
+    Returns a openapi reference to the provided type, and optionally wraps it in an
+    array
     """
 
     reference = {"$ref": schema_ref.format(model=name_for_type(t))}
@@ -74,9 +76,9 @@ def get_resolved_url_patterns(
     base_patterns: Sequence[URLResolver | URLPattern],
 ) -> list[tuple[URLPattern, str]]:
     """
-    Given a list of base URL patterns, this function digs down into the URL hierarchy and evaluates the full URLs of all
-    django views that have a simple path (e.g. no regex).
-    Returns a list of tuples with each RoutePattern and its full URL.
+    Given a list of base URL patterns, this function digs down into the URL hierarchy
+    and evaluates the full URLs of all django views that have a simple path (e.g. no
+    regex). Returns a list of tuples with each RoutePattern and its full URL.
     """
 
     unresolved_patterns: list[tuple[URLResolver | URLPattern, str]] = [
@@ -132,7 +134,8 @@ def django_path_to_openapi_url_and_parameters(path: str) -> tuple[str, list[dict
         )
         return "{" + parameter_name + "}"
 
-    # Replaces e.g. "/x/<str:hello>/<int:hi>/" with "/x/{hello}/{hi}/" and also populates the parameters variable.
+    # Replaces e.g. "/x/<str:hello>/<int:hi>/" with "/x/{hello}/{hi}/" and also
+    # populates the parameters variable.
     path = re.sub(r"<([a-zA-Z0-9_]+):([a-zA-Z0-9_]+)>", replacer, path)
 
     return path, parameters
@@ -152,7 +155,8 @@ def get_schema_for_type_annotation(
     else:
         type_annotations = (input_type_annotation,)
 
-    # List of schemas we generate based on the return types (to support oneOf union types)
+    # List of schemas we generate based on the return types (to support oneOf union
+    # types)
     schemas = []
     inner_type_annotations = []
 
@@ -184,7 +188,8 @@ def paths_and_types_for_view(
 
     signature = inspect.signature(callback)
 
-    # Types that should be included in the schema object (referenced via schema_type_ref)
+    # Types that should be included in the schema object (referenced via
+    # schema_type_ref)
     types: list[type] = []
 
     schema, return_types = get_schema_for_type_annotation(signature.return_annotation)
@@ -236,8 +241,8 @@ def paths_and_types_for_view(
         path: {
             api_meta.method.lower(): {
                 "operationId": view_name,
-                # Note: We could consider allowing users to pass a description into @api() instead of using the
-                # function docstring.
+                # Note: We could consider allowing users to pass a description into
+                # @api() instead of using the function docstring.
                 "description": callback.__doc__ or "",
                 # Tags are useful for grouping operations in codegen
                 "tags": [app_name],
@@ -260,7 +265,8 @@ def openapi_query_parameters(
     *, query_params: list[str], signature: inspect.Signature
 ) -> list[dict]:
     """
-    Converts a function signature and a list of query params into openapi query parameters.
+    Converts a function signature and a list of query params into openapi query
+    parameters.
     """
 
     parameters = []
@@ -338,15 +344,18 @@ def generate_api_spec(urlpatterns: Sequence[URLResolver | URLPattern]) -> dict:
 
     operations = []
 
-    # Iterate through all django views within the url patterns and generate specs for them
+    # Iterate through all django views within the url patterns and generate specs for
+    # them
     for pattern, resolved_url in all_urls:
         if pattern.callback is None:
             continue
 
         if hasattr(pattern.callback, "_method_router_views"):
-            # Special handling for method_router(), which has multiple views on the same URL
+            # Special handling for method_router(), which has multiple views on the
+            # same URL
             for method, callback in cast(
-                dict[str, Callable], pattern.callback._method_router_views  # type: ignore
+                dict[str, Callable],
+                pattern.callback._method_router_views,  # type: ignore
             ).items():
 
                 if not hasattr(callback, "_api_meta"):
@@ -362,7 +371,11 @@ def generate_api_spec(urlpatterns: Sequence[URLResolver | URLPattern]) -> dict:
                 operations.append(
                     OpenApiOperation(
                         callback=callback,
-                        name=f"{method.lower()}-{pattern.name or pattern.callback.__name__}",
+                        name=(
+                            f"{method.lower()}"
+                            "-"
+                            f"{pattern.name or pattern.callback.__name__}"
+                        ),
                         url=resolved_url,
                     )
                 )
