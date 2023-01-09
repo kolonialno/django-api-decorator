@@ -7,30 +7,17 @@ from django.apps import AppConfig
 from django.conf import settings
 
 from .openapi import generate_api_spec
+from .schema_file import write_schema_file
 
 logger = logging.getLogger(__name__)
 
 
 class ApiToolsConfig(AppConfig):
-    name = "tienda.api_tools"
+    name = "django_api_tools"
 
     def ready(self) -> None:
 
-        if not getattr(settings, "OPENAPI_AUTO_GENERATE", False):
+        if not getattr(settings, "API_TOOLS_SCHEMA_AUTOGENERATE", False):
             return
 
-        urlpatterns = import_module("tienda.urls.base").urlpatterns
-
-        api_spec = generate_api_spec(urlpatterns=urlpatterns)
-
-        base_path = (
-            Path(__file__).parent / Path("../../frontend/api-generated/")
-        ).resolve()
-
-        # Ensure that base path exists
-        base_path.mkdir(parents=True, exist_ok=True)
-
-        path = base_path / "schemas.json"
-        with open(path, "w") as f:
-            json.dump(api_spec, f, indent=4)
-            logger.info("Wrote OpenAPI schema to %s", path)
+        write_schema_file()
