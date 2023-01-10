@@ -9,7 +9,7 @@ logger = logging.getLogger(__name__)
 
 
 class ApiToolsConfig(AppConfig):
-    name = "django_api_tools"
+    name = "django_api_decorator"
 
     def ready(self) -> None:
 

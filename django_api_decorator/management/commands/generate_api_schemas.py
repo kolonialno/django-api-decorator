@@ -2,7 +2,7 @@ import logging
 
 from django.core.management import BaseCommand
 
-from django_api_tools.schema_file import check_schema_file_changes, write_schema_file
+from django_api_decorator.schema_file import check_schema_file_changes, write_schema_file
 
 logger = logging.getLogger(__name__)
 

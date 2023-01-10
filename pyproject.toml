@@ -1,10 +1,10 @@
 [tool.poetry]
-name = "django-api-tools"
+name = "django-api-decorator"
 version = "0.1.0"
 description = ""
 authors = ["Orhan Hirsch <orhan.hirsch@oda.com>"]
 readme = "README.md"
-packages = [{include = "django_api_tools"}]
+packages = [{include = "django_api_decorator"}]
 
 [tool.poetry.dependencies]
 python = "^3.10"

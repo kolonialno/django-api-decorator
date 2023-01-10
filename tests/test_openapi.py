@@ -5,8 +5,8 @@ from django.test.utils import override_settings
 from django.urls import path
 from pydantic import BaseModel
 
-from django_api_tools.decorators import api
-from django_api_tools.openapi import generate_api_spec
+from django_api_decorator.decorators import api
+from django_api_decorator.openapi import generate_api_spec
 
 urlpatterns = None
 

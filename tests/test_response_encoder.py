@@ -5,7 +5,7 @@ import pydantic
 import pytest
 from django.http.response import HttpResponse
 
-from django_api_tools.decorators import (
+from django_api_decorator.decorators import (
     _dataclass_encoder,
     _get_response_encoder,
     _json_encoder,
