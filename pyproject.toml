@@ -1,9 +1,12 @@
 [tool.poetry]
 name = "django-api-decorator"
-version = "0.1.0"
-description = ""
-authors = ["Orhan Hirsch <orhan.hirsch@oda.com>"]
+version = "0.1.1"
+description = "A collection of tools to build function based Django APIs"
+authors = ["Oda <tech@oda.com>"]
+license = "MIT"
 readme = "README.md"
+homepage = "https://github.com/kolonialno/django-api-decorator"
+repository = "https://github.com/kolonialno/django-api-decorator"
 packages = [{include = "django_api_decorator"}]
 
 [tool.poetry.dependencies]
