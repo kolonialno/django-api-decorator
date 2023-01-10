@@ -67,18 +67,18 @@ def api(
     login_required = (
         login_required
         if login_required is not None
-        else getattr(settings, "API_TOOLS_DEFAULT_LOGIN_REQUIRED", True)
+        else getattr(settings, "API_DECORATOR_DEFAULT_LOGIN_REQUIRED", True)
     )
     atomic = (
         atomic
         if atomic is not None
-        else getattr(settings, "API_TOOLS_DEFAULT_ATOMIC", True)
+        else getattr(settings, "API_DECORATOR_DEFAULT_ATOMIC", True)
     )
 
     auth_check = (
         auth_check
         if auth_check is not None
-        else getattr(settings, "API_TOOLS_AUTH_CHECK", lambda request: False)
+        else getattr(settings, "API_DECORATOR_AUTH_CHECK", lambda request: False)
     )
 
     def decorator(func: Callable[..., Any]) -> Callable[..., HttpResponse]:

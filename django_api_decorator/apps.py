@@ -13,7 +13,7 @@ class ApiToolsConfig(AppConfig):
 
     def ready(self) -> None:
 
-        if not getattr(settings, "API_TOOLS_SCHEMA_AUTOGENERATE", False):
+        if not getattr(settings, "API_DECORATOR_SCHEMA_AUTOGENERATE", False):
             return
 
         write_schema_file()

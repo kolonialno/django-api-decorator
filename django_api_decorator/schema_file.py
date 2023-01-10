@@ -17,7 +17,7 @@ def get_api_spec():
 
 
 def get_path() -> Path:
-    path = Path(settings.API_TOOLS_SCHEMA_PATH)
+    path = Path(settings.API_DECORATOR_SCHEMA_PATH)
 
     # Ensure that base path exists
     path.parent.mkdir(parents=True, exist_ok=True)
