@@ -7,8 +7,8 @@ P = ParamSpec("P")
 
 def method_router(
     csrf_exempt: bool | None = None,
-    **views: Callable[Concatenate[HttpRequest, P], HttpResponse],
-) -> Callable[Concatenate[HttpRequest, P], HttpResponse]:
+    **views: Callable[..., HttpResponse],
+) -> Callable[..., HttpResponse]:
     """
     Returns a view that dispatches to different views based on the request method.
     This allows us to have plain function views for each HTTP method, rather than
@@ -57,4 +57,4 @@ def method_router(
 
     call_view._method_router_views = views  # type: ignore[attr-defined]
 
-    return cast(Callable[Concatenate[HttpRequest, P], HttpResponse], call_view)
+    return cast(Callable[..., HttpResponse], call_view)

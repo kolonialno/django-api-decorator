@@ -4,6 +4,7 @@ from django.http import HttpRequest, JsonResponse
 from django.test.client import Client
 from django.test.utils import override_settings
 from django.urls import path
+from pydantic import BaseModel
 
 from django_api_decorator.decorators import api
 from django_api_decorator.utils import method_router
@@ -17,8 +18,11 @@ def test_allowed_methods(client: Client) -> None:
     def get_view(request: HttpRequest) -> JsonResponse:
         return JsonResponse({"data": True})
 
+    class Body(BaseModel):
+        name: str
+
     @api(method="POST", login_required=False)
-    def post_view(request: HttpRequest) -> JsonResponse:
+    def post_view(request: HttpRequest, body: Body) -> JsonResponse:
         return JsonResponse({"data": True})
 
     urls = [
