@@ -1,4 +1,4 @@
-from typing import Callable, Concatenate, ParamSpec, cast
+from typing import Callable, ParamSpec, cast
 
 from django.http import HttpRequest, HttpResponse, HttpResponseNotAllowed
 

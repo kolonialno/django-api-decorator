@@ -39,7 +39,9 @@ def test_allowed_methods(client: Client) -> None:
         response = client.get("/api")
         assert response.status_code == 200
 
-        response = client.post("/api")
+        response = client.post(
+            "/api", data={"name": "x"}, content_type="application/json"
+        )
         assert response.status_code == 200
 
         response = client.put("/api")
