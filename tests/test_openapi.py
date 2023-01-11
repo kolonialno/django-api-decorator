@@ -1,6 +1,8 @@
 import datetime
 from enum import Enum
 
+from django.http import HttpRequest
+from django.test.client import Client
 from django.test.utils import override_settings
 from django.urls import path
 from pydantic import BaseModel
@@ -12,7 +14,7 @@ urlpatterns = None
 
 
 @override_settings(ROOT_URLCONF=__name__)
-def test_openapi_spec(client):
+def test_openapi_spec(client: Client) -> None:
     class Body(BaseModel):
         name: str
         num: int
@@ -41,7 +43,7 @@ def test_openapi_spec(client):
         ],
     )
     def view(
-        request,
+        request: HttpRequest,
         body: Body,
         path_str: str,
         path_int: int,
@@ -186,7 +188,7 @@ def test_openapi_spec(client):
 
 
 @override_settings(ROOT_URLCONF=__name__)
-def test_return_type_union(client):
+def test_return_type_union(client: Client) -> None:
     class A(BaseModel):
         name: str
 
@@ -200,9 +202,7 @@ def test_return_type_union(client):
         method="GET",
         login_required=False,
     )
-    def view(
-        request,
-    ) -> A | B | C:
+    def view(request: HttpRequest) -> A | B | C:
         return C(ok=True)
 
     urls = [

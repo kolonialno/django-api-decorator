@@ -1,7 +1,8 @@
 import datetime
 from unittest import mock
 
-from django.http import JsonResponse
+from django.http import HttpRequest, JsonResponse
+from django.test.client import Client
 from django.test.utils import override_settings
 from django.urls import path
 from pydantic import BaseModel
@@ -12,13 +13,13 @@ urlpatterns = None
 
 
 @override_settings(ROOT_URLCONF=__name__)
-def test_allowed_methods(client):
+def test_allowed_methods(client: Client) -> None:
     @api(method="GET", login_required=False)
-    def get_view(request):
+    def get_view(request: HttpRequest) -> JsonResponse:
         return JsonResponse({"data": True})
 
     @api(method="POST", login_required=False)
-    def post_view(request):
+    def post_view(request: HttpRequest) -> JsonResponse:
         return JsonResponse({"data": True})
 
     urls = [
@@ -41,21 +42,21 @@ def test_allowed_methods(client):
 
 
 @override_settings(ROOT_URLCONF=__name__)
-def test_login_required(client):
+def test_login_required(client: Client) -> None:
     @api(method="GET", login_required=True, auth_check=lambda request: True)
-    def auth_user_view(request):
+    def auth_user_view(request: HttpRequest) -> JsonResponse:
         return JsonResponse({"data": True})
 
     @api(method="GET", login_required=False, auth_check=lambda request: True)
-    def auth_anonymous_view(request):
+    def auth_anonymous_view(request: HttpRequest) -> JsonResponse:
         return JsonResponse({"data": True})
 
     @api(method="GET", login_required=True, auth_check=lambda request: False)
-    def noauth_user_view(request):
+    def noauth_user_view(request: HttpRequest) -> JsonResponse:
         return JsonResponse({"data": True})
 
     @api(method="GET", login_required=False, auth_check=lambda request: False)
-    def noauth_anonymous_view(request):
+    def noauth_anonymous_view(request: HttpRequest) -> JsonResponse:
         return JsonResponse({"data": True})
 
     urls = [
@@ -80,7 +81,7 @@ def test_login_required(client):
 
 
 @override_settings(ROOT_URLCONF=__name__)
-def test_url_path(client):
+def test_url_path(client: Client) -> None:
     """
     Tests URL paths with the decorator. The decorator doesn't touch the parameters
     currently, so we are essentially testing Django internals, but it is good to have
@@ -88,7 +89,7 @@ def test_url_path(client):
     """
 
     @api(method="GET", login_required=False)
-    def view(request, a: int, b: str):
+    def view(request: HttpRequest, a: int, b: str) -> JsonResponse:
         return JsonResponse({"a": a, "b": b})
 
     urls = [
@@ -108,7 +109,7 @@ def test_url_path(client):
 
 
 @override_settings(ROOT_URLCONF=__name__)
-def test_url_path_and_query(client):
+def test_url_path_and_query(client: Client) -> None:
     @api(
         method="GET",
         login_required=False,
@@ -124,7 +125,7 @@ def test_url_path_and_query(client):
         ],
     )
     def view(
-        request,
+        request: HttpRequest,
         a: int,
         b: str,
         num: int,
@@ -135,7 +136,7 @@ def test_url_path_and_query(client):
         opt_date: datetime.date | None = None,
         opt_string: str | None = None,
         opt_boolean: bool | None = None,
-    ):
+    ) -> JsonResponse:
         return JsonResponse({})
 
     urls = [
@@ -203,7 +204,7 @@ def test_url_path_and_query(client):
 
 
 @override_settings(ROOT_URLCONF=__name__)
-def test_basic_parsing(client):
+def test_basic_parsing(client: Client) -> None:
     class Body(BaseModel):
         pass
 
@@ -211,7 +212,7 @@ def test_basic_parsing(client):
         method="POST",
         login_required=False,
     )
-    def view(request, body: Body):
+    def view(request: HttpRequest, body: Body) -> JsonResponse:
         return JsonResponse({})
 
     urls = [
@@ -231,7 +232,7 @@ def test_basic_parsing(client):
 
 
 @override_settings(ROOT_URLCONF=__name__)
-def test_parsing_error_propagation(client):
+def test_parsing_error_propagation(client: Client) -> None:
     class Body(BaseModel):
         num: int
         d: datetime.date
@@ -240,7 +241,7 @@ def test_parsing_error_propagation(client):
         method="POST",
         login_required=False,
     )
-    def view(request, body: Body):
+    def view(request: HttpRequest, body: Body) -> JsonResponse:
         return JsonResponse({})
 
     urls = [
@@ -273,7 +274,7 @@ def test_parsing_error_propagation(client):
 
 
 @override_settings(ROOT_URLCONF=__name__)
-def test_parsing_list(client):
+def test_parsing_list(client: Client) -> None:
     class Body(BaseModel):
         num: int
         d: datetime.date
@@ -282,7 +283,7 @@ def test_parsing_list(client):
         method="POST",
         login_required=False,
     )
-    def view(request, body: list[Body]):
+    def view(request: HttpRequest, body: list[Body]) -> JsonResponse:
         return JsonResponse({})
 
     urls = [

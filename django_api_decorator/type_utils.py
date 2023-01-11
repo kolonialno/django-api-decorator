@@ -26,7 +26,7 @@ def is_optional(type_annotation: type) -> bool:
 
 
 def unwrap_optional(type_annotation: type) -> type:
-    return next(
+    return next(  # type: ignore[no-any-return]
         arg
         for arg in typing.get_args(type_annotation)
         if not issubclass(arg, types.NoneType)
@@ -38,7 +38,7 @@ def is_list(*, type_annotation: type) -> bool:
 
 
 def unwrap_list_item_type(*, type_annotation: type) -> type:
-    return typing.get_args(type_annotation)[0]
+    return typing.get_args(type_annotation)[0]  # type: ignore[no-any-return]
 
 
 def get_inner_list_type(type_annotation: type) -> tuple[type, bool]:

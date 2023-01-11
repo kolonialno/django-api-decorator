@@ -22,9 +22,22 @@ isort = "^5.11.3"
 flake8 = "^6.0.0"
 pytest-django = "^4.5.2"
 flake8-black = "^0.3.6"
+mypy = "^0.981"
+django-stubs = {extras = ["compatible-mypy"], version = "^1.13.1"}
 
 [tool.isort]
 profile = "black"
+
+[tool.black]
+target-version = ["py310"]
+line-length = 88
+
+[tool.mypy]
+strict = true
+plugins = ["mypy_django_plugin.main"]
+
+[tool.django-stubs]
+django_settings_module = "tests.django_settings"
 
 [build-system]
 requires = ["poetry-core"]

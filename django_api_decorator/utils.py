@@ -1,7 +1,14 @@
-from django.http import HttpResponseNotAllowed
+from typing import Callable, Concatenate, ParamSpec, cast
+
+from django.http import HttpRequest, HttpResponse, HttpResponseNotAllowed
+
+P = ParamSpec("P")
 
 
-def method_router(csrf_exempt: bool | None = None, **views):
+def method_router(
+    csrf_exempt: bool | None = None,
+    **views: Callable[Concatenate[HttpRequest, P], HttpResponse],
+) -> Callable[Concatenate[HttpRequest, P], HttpResponse]:
     """
     Returns a view that dispatches to different views based on the request method.
     This allows us to have plain function views for each HTTP method, rather than
@@ -35,15 +42,19 @@ def method_router(csrf_exempt: bool | None = None, **views):
             )
         csrf_exempt = all(csrf_exempt_values)
 
-    def invalid_method(self, request, *args, **kwargs):
-        return HttpResponseNotAllowed(self.views.keys())
+    def invalid_method(
+        request: HttpRequest, *args: P.args, **kwargs: P.kwargs
+    ) -> HttpResponse:
+        return HttpResponseNotAllowed(views.keys())
 
-    def call_view(request, *args, **kwargs):
-        view = views.get(request.method, invalid_method)
+    def call_view(
+        request: HttpRequest, *args: P.args, **kwargs: P.kwargs
+    ) -> HttpResponse:
+        view = views.get(cast(str, request.method), invalid_method)
         return view(request, *args, **kwargs)
 
     call_view.csrf_exempt = csrf_exempt  # type: ignore[attr-defined]
 
     call_view._method_router_views = views  # type: ignore[attr-defined]
 
-    return call_view
+    return cast(Callable[Concatenate[HttpRequest, P], HttpResponse], call_view)

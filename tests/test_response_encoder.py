@@ -13,22 +13,22 @@ from django_api_decorator.decorators import (
 )
 
 
-def test_get_response_encoder_any():
+def test_get_response_encoder_any() -> None:
     assert _get_response_encoder(type_annotation=Any) == _json_encoder
 
 
-def test_get_response_encoder_dict():
+def test_get_response_encoder_dict() -> None:
     assert _get_response_encoder(type_annotation=dict) == _json_encoder
 
 
-def test_get_response_encoder_pydantic_model():
+def test_get_response_encoder_pydantic_model() -> None:
     class PydanticRecord(pydantic.BaseModel):
         pass
 
     assert _get_response_encoder(type_annotation=PydanticRecord) == _pydantic_encoder
 
 
-def test_get_response_encoder_dataclass():
+def test_get_response_encoder_dataclass() -> None:
     @dataclasses.dataclass
     class DataclassRecord:
         pass
@@ -36,22 +36,26 @@ def test_get_response_encoder_dataclass():
     assert _get_response_encoder(type_annotation=DataclassRecord) == _dataclass_encoder
 
 
-def test_get_response_encoder_http_response():
+def test_get_response_encoder_http_response() -> None:
     response_encoder = _get_response_encoder(type_annotation=HttpResponse)
     assert callable(response_encoder)
-    assert response_encoder.__name__ == "<lambda>"
+    assert response_encoder.__name__ == "<lambda>"  # type: ignore[attr-defined]
 
 
-def test_get_response_encoder_list_of_dicts():
-    assert _get_response_encoder(type_annotation=list[dict]) == _json_encoder
+def test_get_response_encoder_list_of_dicts() -> None:
+    assert (
+        _get_response_encoder(type_annotation=list[dict])  # type: ignore
+        == _json_encoder
+    )
     assert _get_response_encoder(type_annotation=list[dict[str, Any]]) == _json_encoder
 
 
-def test_get_response_encoder_union_of_str_int_bool():
+def test_get_response_encoder_union_of_str_int_bool() -> None:
     assert _get_response_encoder(type_annotation=Union[str, int, bool]) == _json_encoder
+    assert _get_response_encoder(type_annotation=str | int | bool) == _json_encoder
 
 
-def test_get_response_encoder_list_of_pydantic_records():
+def test_get_response_encoder_list_of_pydantic_records() -> None:
     class PydanticRecord(pydantic.BaseModel):
         pass
 
@@ -60,7 +64,7 @@ def test_get_response_encoder_list_of_pydantic_records():
     )
 
 
-def test_get_response_encoder_list_of_dataclasses():
+def test_get_response_encoder_list_of_dataclasses() -> None:
     @dataclasses.dataclass
     class DataclassRecord:
         pass
@@ -69,7 +73,7 @@ def test_get_response_encoder_list_of_dataclasses():
         _get_response_encoder(type_annotation=list[DataclassRecord])
 
 
-def test_get_response_encoder_union_of_pydantic_records():
+def test_get_response_encoder_union_of_pydantic_records() -> None:
     class PydanticRecord(pydantic.BaseModel):
         pass
 
@@ -82,7 +86,7 @@ def test_get_response_encoder_union_of_pydantic_records():
     )
 
 
-def test_get_response_encoder_union_of_pydantic_and_dict():
+def test_get_response_encoder_union_of_pydantic_and_dict() -> None:
     class PydanticRecord(pydantic.BaseModel):
         pass
 
@@ -90,7 +94,7 @@ def test_get_response_encoder_union_of_pydantic_and_dict():
         _get_response_encoder(type_annotation=Union[PydanticRecord, dict])
 
 
-def test_get_response_encoder_union_of_pydantic_and_dataclass():
+def test_get_response_encoder_union_of_pydantic_and_dataclass() -> None:
     class PydanticRecord(pydantic.BaseModel):
         pass
 

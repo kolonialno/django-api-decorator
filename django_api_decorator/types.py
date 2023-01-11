@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import TypedDict
+from typing import Any, TypedDict
 
 
 class FieldError(TypedDict):
@@ -27,12 +27,12 @@ class PublicAPIError(Exception):
 
     def __init__(
         self,
-        *args,
+        *args: Any,
         status_code: int | None = 500,
         message: str | None = "",
-        errors: dict | None = None,
-        **kwargs,
-    ):
+        errors: dict[str, Any] | None = None,
+        **kwargs: Any,
+    ) -> None:
         super().__init__(*args, *kwargs)
 
         self.message = errors if errors is not None else [message]

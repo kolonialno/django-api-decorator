@@ -9,6 +9,7 @@ from typing import TYPE_CHECKING, Any, Union, cast
 
 import pydantic
 import pydantic.schema
+from django.http import HttpResponse
 from django.urls.resolvers import RoutePattern, URLPattern, URLResolver
 from pydantic import BaseModel
 from pydantic.utils import get_model
@@ -107,7 +108,9 @@ def get_resolved_url_patterns(
     return resolved_urls
 
 
-def django_path_to_openapi_url_and_parameters(path: str) -> tuple[str, list[dict]]:
+def django_path_to_openapi_url_and_parameters(
+    path: str,
+) -> tuple[str, list[dict[str, Any]]]:
     """
     Returns an OpenAPI URL and the URL parameter specs, given a django url.
     """
@@ -121,7 +124,7 @@ def django_path_to_openapi_url_and_parameters(path: str) -> tuple[str, list[dict
 
     parameters = []
 
-    def replacer(match: re.Match) -> str:
+    def replacer(match: re.Match[str]) -> str:
         parameter_type = match.group(1)
         parameter_name = match.group(2)
         parameters.append(
@@ -143,7 +146,7 @@ def django_path_to_openapi_url_and_parameters(path: str) -> tuple[str, list[dict
 
 def get_schema_for_type_annotation(
     input_type_annotation: type,
-) -> tuple[dict | None, list[type]]:
+) -> tuple[dict[str, Any] | None, list[type]]:
     """
     Helper function that generates a OpenAPI schema based on an input_type_annotation
     Supports pydantic models directly, or with Union / list wrappers.
@@ -179,8 +182,8 @@ def get_schema_for_type_annotation(
 
 
 def paths_and_types_for_view(
-    *, view_name: str, callback: Callable, resolved_url: str
-) -> tuple[dict, list[type]]:
+    *, view_name: str, callback: Callable[..., HttpResponse], resolved_url: str
+) -> tuple[dict[str, Any], list[type]]:
 
     api_meta: ApiMeta | None = getattr(callback, "_api_meta", None)
 
@@ -263,7 +266,7 @@ def paths_and_types_for_view(
 
 def openapi_query_parameters(
     *, query_params: list[str], signature: inspect.Signature
-) -> list[dict]:
+) -> list[dict[str, Any]]:
     """
     Converts a function signature and a list of query params into openapi query
     parameters.
@@ -316,27 +319,32 @@ def openapi_query_parameters(
     return parameters
 
 
-def schemas_for_types(api_types: list[type]) -> dict:
+def schemas_for_types(api_types: list[type]) -> dict[str, Any]:
 
     # This only supports Pydantic models for now.
     assert all(
         hasattr(t, "__pydantic_model__") or issubclass(t, BaseModel) for t in api_types
     )
 
-    return pydantic.schema.schema(
-        cast(Sequence[Union[type[BaseModel], type["Dataclass"]]], api_types),
-        ref_template=schema_ref,
-    )["definitions"]
+    return cast(
+        dict[str, Any],
+        pydantic.schema.schema(
+            cast(Sequence[Union[type[BaseModel], type["Dataclass"]]], api_types),
+            ref_template=schema_ref,
+        )["definitions"],
+    )
 
 
-def generate_api_spec(urlpatterns: Sequence[URLResolver | URLPattern]) -> dict:
+def generate_api_spec(
+    urlpatterns: Sequence[URLResolver | URLPattern],
+) -> dict[str, Any]:
     """
     Entrypoint for generating an API spec. The function input is a list of URL patterns.
     """
 
     @dataclasses.dataclass
     class OpenApiOperation:
-        callback: Callable
+        callback: Callable[..., HttpResponse]
         name: str
         url: str
 
@@ -354,7 +362,7 @@ def generate_api_spec(urlpatterns: Sequence[URLResolver | URLPattern]) -> dict:
             # Special handling for method_router(), which has multiple views on the
             # same URL
             for method, callback in cast(
-                dict[str, Callable],
+                dict[str, Callable[..., HttpResponse]],
                 pattern.callback._method_router_views,  # type: ignore
             ).items():
 

@@ -26,6 +26,11 @@ from .type_utils import (
 )
 from .types import ApiMeta, FieldError, PublicAPIError
 
+P = typing.ParamSpec("P")
+T = typing.TypeVar("T")
+
+Annotation = Any
+
 
 def api(
     *,
@@ -34,8 +39,8 @@ def api(
     login_required: bool | None = None,
     response_status: int = 200,
     atomic: bool | None = None,
-    auth_check: Callable[..., Any] | None = None,
-) -> Callable[[Callable[..., Any]], Callable[..., HttpResponse]]:
+    auth_check: Callable[[HttpRequest], bool] | None = None,
+) -> Callable[[Callable[P, T]], Callable[P, HttpResponse]]:
     """
     Defines an API view. This handles validation of query parameters, parsing of
     the request body, access control, and serialization of the response payload.
@@ -75,10 +80,13 @@ def api(
         else getattr(settings, "API_DECORATOR_DEFAULT_ATOMIC", True)
     )
 
-    auth_check = (
+    def default_auth_check(request: HttpRequest) -> bool:
+        return request.user.is_authenticated
+
+    _auth_check = (
         auth_check
         if auth_check is not None
-        else getattr(settings, "API_DECORATOR_AUTH_CHECK", lambda request: False)
+        else getattr(settings, "API_DECORATOR_AUTH_CHECK", default_auth_check)
     )
 
     def decorator(func: Callable[..., Any]) -> Callable[..., HttpResponse]:
@@ -110,7 +118,7 @@ def api(
 
             # Check if the view requires the user to be logged in and if so make
             # sure the user is actually logged in.
-            if login_required and not auth_check(request):
+            if login_required and not _auth_check(request):
                 return JsonResponse({"errors": ["Login required"]}, status=401)
 
             try:
@@ -387,15 +395,15 @@ class ResponseEncoder(Protocol):
         ...
 
 
-def _is_class(*, type_annotation: type):
+def _is_class(*, type_annotation: Annotation) -> bool:
 
-    return (
-        inspect.isclass(type_annotation)
-        and type(type_annotation) is not types.GenericAlias
+    return inspect.isclass(type_annotation) and (
+        type(type_annotation)
+        is not types.GenericAlias  # type: ignore[comparison-overlap]
     )
 
 
-def _get_response_encoder(*, type_annotation: type) -> ResponseEncoder:
+def _get_response_encoder(*, type_annotation: Annotation) -> ResponseEncoder:
 
     type_is_class = _is_class(type_annotation=type_annotation)
 
