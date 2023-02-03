@@ -220,7 +220,7 @@ def _validate_bool(value: str, *, query_param_name: str) -> bool:
         return True
 
     if value in ("no", "off", "false", "0"):
-        return True
+        return False
 
     raise ValidationError(f"{query_param_name} must be a boolean")
 
