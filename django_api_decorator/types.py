@@ -35,5 +35,5 @@ class PublicAPIError(Exception):
     ) -> None:
         super().__init__(*args, *kwargs)
 
-        self.message = errors if errors is not None else [message]
+        self.message = errors if errors is not None and not message else message
         self.status_code = status_code
