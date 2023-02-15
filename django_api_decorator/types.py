@@ -23,6 +23,11 @@ class PublicAPIError(Exception):
     """
     Exception for public facing errors.
     Raises an ApiException in the frontend.
+
+    Args:
+        status_code (int | None, optional): HTTP status code. Defaults to 500.
+        message (str | None, optional): Public facing error message. Defaults to "".
+        errors (dict[str, Any] | None, optional): Underlying error messages. Defaults to None.
     """
 
     def __init__(
