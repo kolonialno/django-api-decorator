@@ -24,6 +24,7 @@ pytest-django = "^4.5.2"
 flake8-black = "^0.3.6"
 mypy = "^0.981"
 django-stubs = {extras = ["compatible-mypy"], version = "^1.13.1"}
+pytest-mock = "^3.10.0"
 
 [tool.isort]
 profile = "black"

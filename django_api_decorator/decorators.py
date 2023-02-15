@@ -287,7 +287,7 @@ def _get_query_param_parser(
         for query_param, arg_name in query_param_mapping.items()
     }
     required_params = {
-        query_param
+        arg_name
         for query_param, arg_name in query_param_mapping.items()
         if parameters[arg_name].default is inspect.Parameter.empty
     }
