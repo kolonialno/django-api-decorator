@@ -1,34 +1,29 @@
 import dataclasses
+import functools
 import inspect
 import logging
 import re
 import typing
 from collections.abc import Callable, Sequence
 from datetime import date
-from typing import TYPE_CHECKING, Any, Union, cast
+from typing import Any, cast
 
 import pydantic
-import pydantic.schema
 from django.http import HttpResponse
 from django.urls.resolvers import RoutePattern, URLPattern, URLResolver
 from pydantic import BaseModel
-from pydantic.utils import get_model
 
-from .type_utils import (
-    get_inner_list_type,
-    is_optional,
-    is_pydantic_model,
-    is_union,
-    unwrap_optional,
-)
+from .type_utils import get_inner_list_type, is_optional, is_union, unwrap_optional
 from .types import ApiMeta
-
-if TYPE_CHECKING:
-    from pydantic.dataclasses import Dataclass
 
 logger = logging.getLogger(__name__)
 
 schema_ref = "#/components/schemas/{model}"
+
+
+@functools.cache
+def get_schema_generator() -> pydantic.json_schema.GenerateJsonSchema:
+    return pydantic.json_schema.GenerateJsonSchema(ref_template=schema_ref)
 
 
 def is_type_supported(t: type) -> bool:
@@ -53,7 +48,7 @@ def name_for_type(t: type) -> str:
     # normalize_name removes special characters like [] from generics.
     # get_model gets the pydantic model, even if a pydantic dataclass is used.
 
-    return pydantic.schema.normalize_name(get_model(t).__name__)
+    return get_schema_generator().normalize_name(t.__name__)
 
 
 def schema_type_ref(t: type, *, is_list: bool = False) -> dict[str, Any]:
@@ -324,12 +319,8 @@ def schemas_for_types(api_types: list[type]) -> dict[str, Any]:
         hasattr(t, "__pydantic_model__") or issubclass(t, BaseModel) for t in api_types
     )
 
-    return cast(
-        dict[str, Any],
-        pydantic.schema.schema(
-            cast(Sequence[Union[type[BaseModel], type["Dataclass"]]], api_types),
-            ref_template=schema_ref,
-        )["definitions"],
+    schema_to_name, defs = pydantic.json_schema.models_json_schema(
+        [(api_type, "validation") for api_type in api_types], ref_template=schema_ref
     )
 
 

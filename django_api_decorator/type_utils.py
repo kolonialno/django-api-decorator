@@ -1,8 +1,6 @@
 import types
 import typing
 
-import pydantic
-
 
 def is_dict(*, type_annotation: type) -> bool:
     return typing.get_origin(type_annotation) is dict
@@ -46,10 +44,3 @@ def get_inner_list_type(type_annotation: type) -> tuple[type, bool]:
     if type_is_list:
         type_annotation = unwrap_list_item_type(type_annotation=type_annotation)
     return type_annotation, type_is_list
-
-
-def is_pydantic_model(t: type) -> bool:
-    return issubclass(t, pydantic.BaseModel) or (
-        hasattr(t, "__pydantic_model__")
-        and issubclass(t.__pydantic_model__, pydantic.BaseModel)
-    )

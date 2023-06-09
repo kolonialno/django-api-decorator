@@ -160,7 +160,6 @@ def test_openapi_spec(client: Client) -> None:
             "schemas": {
                 "State": {
                     "title": "State",
-                    "description": "An enumeration.",
                     "enum": [1, 2],
                 },
                 "Response": {
@@ -178,9 +177,15 @@ def test_openapi_spec(client: Client) -> None:
                     "properties": {
                         "name": {"title": "Name", "type": "string"},
                         "num": {"title": "Num", "type": "integer"},
-                        "d": {"title": "D", "type": "string", "format": "date"},
+                        "d": {
+                            "title": "D",
+                            "anyOf": [
+                                {"type": "string", "format": "date"},
+                                {"type": "null"},
+                            ],
+                        },
                     },
-                    "required": ["name", "num"],
+                    "required": ["name", "num", "d"],
                 },
             }
         },

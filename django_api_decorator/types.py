@@ -1,6 +1,8 @@
 from dataclasses import dataclass
 from typing import Any, TypedDict
 
+from pydantic import TypeAdapter
+
 
 class FieldError(TypedDict):
     message: str
@@ -17,6 +19,8 @@ class ApiMeta:
     method: str
     query_params: list[str]
     response_status: int
+    query_params_adapter: TypeAdapter[Any]
+    body_adapter: TypeAdapter[Any]
 
 
 class PublicAPIError(Exception):
