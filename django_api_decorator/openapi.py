@@ -1,9 +1,7 @@
 import dataclasses
-import inspect
 import logging
 import re
 from collections.abc import Callable, Sequence
-from datetime import date
 from typing import Any, cast
 
 import pydantic
@@ -11,7 +9,6 @@ from django.http import HttpResponse
 from django.urls.resolvers import RoutePattern, URLPattern, URLResolver
 from pydantic.fields import _Undefined as PydanticUndefined
 
-from .type_utils import is_optional, unwrap_optional
 from .types import ApiMeta
 
 logger = logging.getLogger(__name__)
@@ -177,61 +174,6 @@ def paths_and_types_for_view(
     }
 
     return paths, components
-
-
-def openapi_query_parameters(
-    *, query_params: list[str], signature: inspect.Signature
-) -> list[dict[str, Any]]:
-    """
-    Converts a function signature and a list of query params into openapi query
-    parameters.
-    """
-
-    parameters = []
-    for query_param in query_params:
-        query_url_name = query_param.replace("_", "-")
-
-        parameter = signature.parameters[query_param]
-
-        annotation = parameter.annotation
-        has_default = parameter.default != inspect.Parameter.empty
-
-        param_is_optional = is_optional(annotation)
-        if param_is_optional:
-            annotation = unwrap_optional(annotation)
-
-        schema = None
-
-        if annotation is str:
-            schema = {"type": "string"}
-
-        if annotation is int:
-            schema = {"type": "integer"}
-
-        if annotation is date:
-            schema = {"type": "string", "format": "date"}
-
-        if annotation is bool:
-            schema = {"type": "boolean"}
-
-        if schema is None:
-            logger.warning(
-                "Could not generate types for query param %s with type %s.",
-                query_url_name,
-                annotation,
-            )
-            continue
-
-        parameters.append(
-            {
-                "name": query_url_name,
-                "in": "query",
-                "required": not (param_is_optional or has_default),
-                "schema": schema,
-            }
-        )
-
-    return parameters
 
 
 def generate_api_spec(

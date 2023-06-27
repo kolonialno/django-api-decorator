@@ -2,7 +2,6 @@ import functools
 import inspect
 import logging
 import typing
-import warnings
 from collections.abc import Callable, Mapping
 from typing import Annotated, Any, TypedDict
 
