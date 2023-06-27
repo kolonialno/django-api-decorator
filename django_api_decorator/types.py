@@ -19,8 +19,9 @@ class ApiMeta:
     method: str
     query_params: list[str]
     response_status: int
-    query_params_adapter: TypeAdapter[BaseModel]
+    query_params_model: BaseModel
     body_adapter: TypeAdapter[Any] | None
+    response_adapter: TypeAdapter[Any] | None
 
 
 class PublicAPIError(Exception):

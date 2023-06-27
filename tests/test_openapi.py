@@ -96,7 +96,10 @@ def test_openapi_spec(client: Client) -> None:
                             "name": "opt-num",
                             "in": "query",
                             "required": False,
-                            "schema": {"type": "integer"},
+                            "schema": {
+                                "anyOf": [{"type": "integer"}, {"type": "null"}]
+                            },
+                            "default": None,
                         },
                         {
                             "name": "date",
@@ -108,7 +111,13 @@ def test_openapi_spec(client: Client) -> None:
                             "name": "opt-date",
                             "in": "query",
                             "required": False,
-                            "schema": {"type": "string", "format": "date"},
+                            "schema": {
+                                "anyOf": [
+                                    {"type": "string", "format": "date"},
+                                    {"type": "null"},
+                                ]
+                            },
+                            "default": None,
                         },
                         {
                             "name": "string",
@@ -120,7 +129,8 @@ def test_openapi_spec(client: Client) -> None:
                             "name": "opt-string",
                             "in": "query",
                             "required": False,
-                            "schema": {"type": "string"},
+                            "schema": {"anyOf": [{"type": "string"}, {"type": "null"}]},
+                            "default": None,
                         },
                         {
                             "name": "boolean",
@@ -132,7 +142,10 @@ def test_openapi_spec(client: Client) -> None:
                             "name": "opt-boolean",
                             "in": "query",
                             "required": False,
-                            "schema": {"type": "boolean"},
+                            "schema": {
+                                "anyOf": [{"type": "boolean"}, {"type": "null"}]
+                            },
+                            "default": None,
                         },
                     ],
                     "requestBody": {
@@ -230,7 +243,7 @@ def test_return_type_union(client: Client) -> None:
                             "content": {
                                 "application/json": {
                                     "schema": {
-                                        "oneOf": [
+                                        "anyOf": [
                                             {"$ref": "#/components/schemas/A"},
                                             {"$ref": "#/components/schemas/B"},
                                             {"$ref": "#/components/schemas/C"},

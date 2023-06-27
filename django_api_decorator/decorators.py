@@ -1,11 +1,9 @@
-import dataclasses
 import functools
 import inspect
 import logging
-import types
 import typing
 from collections.abc import Callable, Mapping
-from typing import Annotated, Any, Protocol, TypedDict
+from typing import Annotated, Any, TypedDict
 
 import pydantic
 from django.conf import settings
@@ -16,9 +14,7 @@ from django.views.decorators.http import require_http_methods
 from pydantic.fields import FieldInfo
 from pydantic.fields import _Undefined as PydanticUndefined
 from pydantic.functional_validators import BeforeValidator
-from pydantic.json import pydantic_encoder
 
-from .type_utils import is_list, is_union
 from .types import ApiMeta, FieldError, PublicAPIError
 
 P = typing.ParamSpec("P")
@@ -89,7 +85,7 @@ def api(
 
         # Get a function that we can call to extract view parameters from
         # the requests query parameters.
-        query_params_adapter = _get_query_param_adapter(
+        query_params_model = _get_query_params_model(
             parameters=signature.parameters, query_params=query_params or []
         )
 
@@ -101,7 +97,7 @@ def api(
 
         # Get a function to use for encoding the value returned from the view
         # into a request we can return to the client.
-        response_encoder = _get_response_encoder(
+        response_adapter = _get_response_adapter(
             type_annotation=signature.return_annotation
         )
 
@@ -131,7 +127,7 @@ def api(
                     else:
                         raw_query_params[key] = True
 
-                query_params = query_params_adapter.validate_python(raw_query_params)
+                query_params = query_params_model.parse_obj(raw_query_params)
                 extra_kwargs.update(query_params.model_dump(exclude_defaults=True))
             except (
                 ValidationError,
@@ -180,15 +176,25 @@ def api(
             if isinstance(response, HttpResponse):
                 return response
 
+            if not response_adapter:
+                raise TypeError(
+                    f"{func} is annotated to return an http response, but returned "
+                    f"{type(response)}"
+                )
+
             # Encode the response from the view to json and create a response object.
-            return response_encoder(payload=response, status=response_status)
+            payload = response_adapter.dump_json(response)
+            return HttpResponse(
+                payload, status=response_status, content_type="application/json"
+            )
 
         inner._api_meta = ApiMeta(  # type: ignore[attr-defined]
             method=method,
             query_params=query_params or [],
             response_status=response_status,
             body_adapter=body_adapter,
-            query_params_adapter=query_params_adapter,
+            query_params_model=query_params_model,
+            response_adapter=response_adapter,
         )
         return inner
 
@@ -209,11 +215,11 @@ TYPE_MAPPING = {
 }
 
 
-def _get_query_param_adapter(
+def _get_query_params_model(
     *,
     parameters: Mapping[str, inspect.Parameter],
     query_params: list[str],
-) -> pydantic.TypeAdapter[pydantic.BaseModel]:
+) -> pydantic.BaseModel:
     if any(arg_name not in parameters for arg_name in query_params):
         raise TypeError("All parameters specified in query_params must exist")
 
@@ -232,9 +238,7 @@ def _get_query_param_adapter(
         )
         fields[arg_name] = (annotation, field)
 
-    model = pydantic.create_model("QueryParams", **fields)
-
-    return pydantic.TypeAdapter(model)
+    return pydantic.create_model("QueryParams", **fields)
 
 
 ################
@@ -259,83 +263,12 @@ def _get_body_adapter(*, parameter: inspect.Parameter) -> pydantic.TypeAdapter[A
 #####################
 
 
-class ResponseEncoder(Protocol):
-    def __call__(self, *, payload: Any, status: int) -> HttpResponse:
-        ...
-
-
-def _is_class(*, type_annotation: Annotation) -> bool:
-    return inspect.isclass(type_annotation) and (
-        type(type_annotation)
-        is not types.GenericAlias  # type: ignore[comparison-overlap]
-    )
-
-
-def _get_response_encoder(*, type_annotation: Annotation) -> ResponseEncoder:
-    type_is_class = _is_class(type_annotation=type_annotation)
-
-    if type_is_class and issubclass(type_annotation, HttpResponse):
-        return lambda payload, status: payload
-
-    if dataclasses.is_dataclass(type_annotation):
-        return _dataclass_encoder
-
-    if type_is_class and issubclass(type_annotation, pydantic.BaseModel):
-        return _pydantic_encoder
-
-    # We need to unwrap inner list and union annotations
-    # to verify whether we support them.
-    inner_type_annotations: tuple[type, ...] = tuple()
-
-    type_is_list = is_list(type_annotation=type_annotation)
-    type_is_union = is_union(type_annotation=type_annotation)
-
-    if type_is_list or type_is_union:
-        inner_type_annotations = typing.get_args(type_annotation)
-
-    if inner_type_annotations and all(
-        _is_class(type_annotation=t) for t in inner_type_annotations
-    ):
-        # Pydantic encoder supports both list and Union wrappers
-        if all(issubclass(t, pydantic.BaseModel) for t in inner_type_annotations):
-            return _pydantic_encoder
-
-        if any(issubclass(t, pydantic.BaseModel) for t in inner_type_annotations):
-            raise NotImplementedError(
-                "@api: We only support all values being pydantic models in a union"
-            )
-
-        if any(dataclasses.is_dataclass(t) for t in inner_type_annotations):
-            raise NotImplementedError(
-                "@api: We do not support encoding dataclasses inside lists or unions"
-            )
-
-    # Assume any other response can be JSON encoded. We might want to restrict
-    # this to some verified types 🤔
-    return _json_encoder
-
-
-def _json_encoder(*, payload: Any, status: int) -> HttpResponse:
-    return JsonResponse(
-        payload,
-        status=status,
-        json_dumps_params={"default": pydantic_encoder},
-        safe=False,
-    )
-
-
-def _pydantic_encoder(payload: Any, status: int) -> HttpResponse:
-    return JsonResponse(
-        payload,
-        status=status,
-        json_dumps_params={"default": pydantic_encoder},
-        safe=False,
-    )
-
-
-def _dataclass_encoder(*, payload: Any, status: int) -> HttpResponse:
-    data = dataclasses.asdict(payload)
-    return _json_encoder(payload=data, status=status)
+def _get_response_adapter(
+    *, type_annotation: Annotation
+) -> pydantic.TypeAdapter | None:
+    if type(type_annotation) is type and issubclass(type_annotation, HttpResponse):
+        return None
+    return pydantic.TypeAdapter(type_annotation)
 
 
 ##################
