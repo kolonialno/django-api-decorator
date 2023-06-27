@@ -128,7 +128,7 @@ def api(
                     else:
                         raw_query_params[key] = True
 
-                query_params = query_params_model.parse_obj(raw_query_params)
+                query_params = query_params_model.model_validate(raw_query_params)
                 extra_kwargs.update(query_params.model_dump(exclude_defaults=True))
             except (
                 ValidationError,
