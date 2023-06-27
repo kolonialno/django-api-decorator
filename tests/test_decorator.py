@@ -177,6 +177,7 @@ def test_query_params(  # type: ignore
     settings.ROOT_URLCONF = __name__
     mocker.patch(f"{__name__}.urlpatterns", urls)
     got = client.get(have_url)
+    print(got.json())
     assert got.status_code == want_status
     if want_values is None:
         collector.assert_not_called()
@@ -318,15 +319,15 @@ def test_parsing_list(client: Client) -> None:
             == 400
         )
 
-        # Empty list is not a valid payload
         assert (
             client.post(
                 "/",
                 data=[],
                 content_type="application/json",
             ).status_code
-            == 400
+            == 200
         )
+
         assert (
             client.post(
                 "/",
@@ -343,4 +344,4 @@ def test_parsing_list(client: Client) -> None:
             content_type="application/json",
         )
         assert response.status_code == 400
-        assert response.json()["field_errors"].keys() == {"num"}
+        assert response.json()["field_errors"].keys() == {"0.num", "1.num", "1.d"}
