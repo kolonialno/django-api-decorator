@@ -2,6 +2,7 @@ import functools
 import inspect
 import logging
 import typing
+import warnings
 from collections.abc import Callable, Mapping
 from typing import Annotated, Any, TypedDict
 
@@ -265,7 +266,9 @@ def _get_body_adapter(*, parameter: inspect.Parameter) -> pydantic.TypeAdapter[A
 
 def _get_response_adapter(
     *, type_annotation: Annotation
-) -> pydantic.TypeAdapter | None:
+) -> pydantic.TypeAdapter[Any] | None:
+    if type_annotation == inspect.Parameter.empty:
+        raise TypeError("Missing annotation for return type of api view")
     if type(type_annotation) is type and issubclass(type_annotation, HttpResponse):
         return None
     return pydantic.TypeAdapter(type_annotation)

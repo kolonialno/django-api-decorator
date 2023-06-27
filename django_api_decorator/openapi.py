@@ -102,7 +102,7 @@ def paths_and_types_for_view(
     components: dict[str, Any] = {}
 
     def to_ref_if_object(schema: dict[str, Any]) -> dict[str, Any]:
-        if schema.get("type", None) == "object":
+        if schema.get("type", None) == "object" and "title" in schema:
             name = schema["title"]
             ref = schema_ref.format(model=name)
             components[name] = schema
