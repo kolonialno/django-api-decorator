@@ -238,7 +238,9 @@ def _get_query_params_model(
         )
         fields[arg_name] = (annotation, field)
 
-    return pydantic.create_model("QueryParams", **fields)
+    return pydantic.create_model(  # type: ignore[no-any-return,call-overload]
+        "QueryParams", **fields
+    )
 
 
 ################
