@@ -184,7 +184,6 @@ def get_schema_for_type_annotation(
 def paths_and_types_for_view(
     *, view_name: str, callback: Callable[..., HttpResponse], resolved_url: str
 ) -> tuple[dict[str, Any], list[type]]:
-
     api_meta: ApiMeta | None = getattr(callback, "_api_meta", None)
 
     assert api_meta is not None
@@ -254,7 +253,7 @@ def paths_and_types_for_view(
                 "responses": {
                     api_meta.response_status: {
                         "description": "",
-                        **api_response,  # type: ignore
+                        **api_response,
                     }
                 },
             }
@@ -320,7 +319,6 @@ def openapi_query_parameters(
 
 
 def schemas_for_types(api_types: list[type]) -> dict[str, Any]:
-
     # This only supports Pydantic models for now.
     assert all(
         hasattr(t, "__pydantic_model__") or issubclass(t, BaseModel) for t in api_types
@@ -363,9 +361,8 @@ def generate_api_spec(
             # same URL
             for method, callback in cast(
                 dict[str, Callable[..., HttpResponse]],
-                pattern.callback._method_router_views,  # type: ignore
+                pattern.callback._method_router_views,
             ).items():
-
                 if not hasattr(callback, "_api_meta"):
                     logger.debug(
                         "Skipping view %s because it is not using @api decorator",
@@ -373,7 +370,7 @@ def generate_api_spec(
                     )
                     continue
 
-                api_meta: ApiMeta = callback._api_meta  # type: ignore
+                api_meta: ApiMeta = callback._api_meta
                 assert method == api_meta.method
 
                 operations.append(
@@ -406,7 +403,6 @@ def generate_api_spec(
     api_types = []
 
     for operation in operations:
-
         paths, types = paths_and_types_for_view(
             view_name=operation.name,
             callback=operation.callback,

@@ -51,5 +51,5 @@ def get_inner_list_type(type_annotation: type) -> tuple[type, bool]:
 def is_pydantic_model(t: type) -> bool:
     return issubclass(t, pydantic.BaseModel) or (
         hasattr(t, "__pydantic_model__")
-        and issubclass(t.__pydantic_model__, pydantic.BaseModel)  # type: ignore
+        and issubclass(t.__pydantic_model__, pydantic.BaseModel)
     )
