@@ -90,7 +90,6 @@ def api(
     )
 
     def decorator(func: Callable[..., Any]) -> Callable[..., HttpResponse]:
-
         signature = inspect.signature(func)
 
         # Get a function that we can call to extract view parameters from
@@ -115,7 +114,6 @@ def api(
         @transaction.non_atomic_requests()
         @require_http_methods([method])
         def inner(request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:
-
             # Check if the view requires the user to be logged in and if so make
             # sure the user is actually logged in.
             if login_required and not _auth_check(request):
@@ -213,7 +211,6 @@ def _validate_int(value: str, *, query_param_name: str) -> int:
 
 
 def _validate_bool(value: str, *, query_param_name: str) -> bool:
-
     value = value.lower().strip()
 
     if value in ("", "yes", "on", "true", "1"):
@@ -226,7 +223,6 @@ def _validate_bool(value: str, *, query_param_name: str) -> bool:
 
 
 def _validate_date(value: str, *, query_param_name: str) -> datetime.date:
-
     try:
         return datetime.date.fromisoformat(value)
     except ValueError:
@@ -234,7 +230,6 @@ def _validate_date(value: str, *, query_param_name: str) -> datetime.date:
 
 
 def _get_validator(parameter: inspect.Parameter) -> Validator:
-
     annotation = parameter.annotation
     if annotation is inspect.Parameter.empty:
         raise ValueError(
@@ -276,7 +271,6 @@ def _get_query_param_parser(
     parameters: Mapping[str, inspect.Parameter],
     query_params: list[str],
 ) -> Callable[[HttpRequest], Mapping[str, Any]]:
-
     query_param_mapping = (
         {query_param.replace("_", "-"): query_param for query_param in query_params}
         if query_params
@@ -293,7 +287,6 @@ def _get_query_param_parser(
     }
 
     def parser(request: HttpRequest) -> Mapping[str, Any]:
-
         validated = {}
 
         for query_param, arg_name in query_param_mapping.items():
@@ -331,7 +324,6 @@ def _can_have_body(method: str | None) -> bool:
 
 
 def _get_body_parser(*, parameter: inspect.Parameter) -> BodyParser:
-
     annotation = parameter.annotation
     if annotation is inspect.Parameter.empty:
         raise TypeError("The body parameter must have a type annotation")
@@ -396,7 +388,6 @@ class ResponseEncoder(Protocol):
 
 
 def _is_class(*, type_annotation: Annotation) -> bool:
-
     return inspect.isclass(type_annotation) and (
         type(type_annotation)
         is not types.GenericAlias  # type: ignore[comparison-overlap]
@@ -404,7 +395,6 @@ def _is_class(*, type_annotation: Annotation) -> bool:
 
 
 def _get_response_encoder(*, type_annotation: Annotation) -> ResponseEncoder:
-
     type_is_class = _is_class(type_annotation=type_annotation)
 
     if type_is_class and issubclass(type_annotation, HttpResponse):
@@ -480,7 +470,6 @@ def handle_validation_error(
     *,
     exception: (ValidationError | pydantic.ValidationError),
 ) -> HttpResponse:
-
     errors: list[str]
     field_errors: Mapping[str, FieldError]
 

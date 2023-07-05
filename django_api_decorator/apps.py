@@ -12,7 +12,6 @@ class ApiToolsConfig(AppConfig):
     name = "django_api_decorator"
 
     def ready(self) -> None:
-
         if not getattr(settings, "API_DECORATOR_SCHEMA_AUTOGENERATE", False):
             return
 

@@ -102,39 +102,39 @@ def _create_api_view(view_func, query_params):  # type:ignore
 class TestViews:
     @staticmethod
     def required(r: HttpRequest, query_param: int) -> JsonResponse:
-        ...
+        return JsonResponse({})
 
     @staticmethod
     def optional(r: HttpRequest, query_param: int = 1) -> JsonResponse:
-        ...
+        return JsonResponse({})
 
     @staticmethod
     def string(r: HttpRequest, query_param: str) -> JsonResponse:
-        ...
+        return JsonResponse({})
 
     @staticmethod
     def date(r: HttpRequest, query_param: datetime.date) -> JsonResponse:
-        ...
+        return JsonResponse({})
 
     @staticmethod
     def number(r: HttpRequest, query_param: int) -> JsonResponse:
-        ...
+        return JsonResponse({})
 
     @staticmethod
     def boolean(r: HttpRequest, query_param: bool) -> JsonResponse:
-        ...
+        return JsonResponse({})
 
     @staticmethod
     def path_string(r: HttpRequest, pp: str) -> JsonResponse:
-        ...
+        return JsonResponse({})
 
     @staticmethod
     def path_int(r: HttpRequest, pp: str) -> JsonResponse:
-        ...
+        return JsonResponse({})
 
     @staticmethod
     def path_many(r: HttpRequest, pp1: str, pp2: int) -> JsonResponse:
-        ...
+        return JsonResponse({})
 
 
 @pytest.mark.parametrize(
@@ -169,7 +169,6 @@ class TestViews:
 def test_query_params(  # type: ignore
     mocker, client, settings, view, have_url, want_status, want_values
 ):
-
     collector, api_view = _create_api_view(view, ["query_param"])  # type: ignore
     urls = [
         path("", api_view),
