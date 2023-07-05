@@ -12,7 +12,7 @@ from django.db import transaction
 from django.http import Http404, HttpRequest, HttpResponse, JsonResponse
 from django.views.decorators.http import require_http_methods
 from pydantic.fields import FieldInfo
-from pydantic.fields import _Undefined as PydanticUndefined
+from pydantic.fields import PydanticUndefined
 from pydantic.functional_validators import BeforeValidator
 
 from .types import ApiMeta, FieldError, PublicAPIError

@@ -7,7 +7,7 @@ from typing import Any, cast
 import pydantic
 from django.http import HttpResponse
 from django.urls.resolvers import RoutePattern, URLPattern, URLResolver
-from pydantic.fields import _Undefined as PydanticUndefined
+from pydantic.fields import PydanticUndefined
 
 from .types import ApiMeta
 
