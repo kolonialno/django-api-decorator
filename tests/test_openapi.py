@@ -174,6 +174,7 @@ def test_openapi_spec(client: Client) -> None:
                 "State": {
                     "title": "State",
                     "enum": [1, 2],
+                    "type": "integer",
                 },
                 "Response": {
                     "title": "Response",

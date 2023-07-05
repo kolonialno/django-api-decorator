@@ -12,8 +12,8 @@ from django.db import transaction
 from django.http import Http404, HttpRequest, HttpResponse, JsonResponse
 from django.views.decorators.http import require_http_methods
 from pydantic.fields import FieldInfo
-from pydantic.fields import PydanticUndefined
 from pydantic.functional_validators import BeforeValidator
+from pydantic_core import PydanticUndefined
 
 from .types import ApiMeta, FieldError, PublicAPIError
 
@@ -211,7 +211,7 @@ def validate_boolean(value: Any) -> Any:
 
 
 TYPE_MAPPING = {
-    bool: Annotated[bool, BeforeValidator(validate_boolean)],
+    bool: Annotated[bool, BeforeValidator(validate_boolean)],  # type: ignore[call-arg]
 }
 
 
