@@ -72,7 +72,7 @@ def api(
     )
 
     def default_auth_check(request: HttpRequest) -> bool:
-        return request.user.is_authenticated
+        return hasattr(request, "user") and request.user.is_authenticated
 
     _auth_check = (
         auth_check
