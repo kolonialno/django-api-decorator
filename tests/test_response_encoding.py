@@ -8,6 +8,7 @@ from pydantic import BaseModel
 from typing_extensions import TypedDict
 
 from django_api_decorator.decorators import api
+from django_api_decorator.openapi import generate_api_spec
 
 
 class MyTypedDict(TypedDict):
@@ -73,3 +74,133 @@ def test_response_encoding(url: str, expected_response: bytes, client: Client) -
     response = client.get(url)
     assert response.status_code == 200
     assert response.content == expected_response
+
+
+def test_schema() -> None:
+    spec = generate_api_spec(urlpatterns)
+    assert spec == {
+        "openapi": "3.0.0",
+        "info": {"title": "API overview", "version": "0.0.1"},
+        "paths": {
+            "/union": {
+                "get": {
+                    "operationId": "view_union",
+                    "description": "",
+                    "tags": ["test_response_encoding"],
+                    "parameters": [],
+                    "responses": {
+                        200: {
+                            "description": "",
+                            "content": {
+                                "application/json": {
+                                    "schema": {
+                                        "anyOf": [
+                                            {"type": "integer"},
+                                            {"type": "string"},
+                                        ]
+                                    }
+                                }
+                            },
+                        }
+                    },
+                }
+            },
+            "/pydantic-model": {
+                "get": {
+                    "operationId": "view_pydantic_model",
+                    "description": "",
+                    "tags": ["test_response_encoding"],
+                    "parameters": [],
+                    "responses": {
+                        200: {
+                            "description": "",
+                            "content": {
+                                "application/json": {
+                                    "schema": {
+                                        "$ref": "#/components/schemas/MyPydanticModel"
+                                    }
+                                }
+                            },
+                        }
+                    },
+                }
+            },
+            "/bool": {
+                "get": {
+                    "operationId": "view_bool",
+                    "description": "",
+                    "tags": ["test_response_encoding"],
+                    "parameters": [],
+                    "responses": {
+                        200: {
+                            "description": "",
+                            "content": {
+                                "application/json": {"schema": {"type": "boolean"}}
+                            },
+                        }
+                    },
+                }
+            },
+            "/int": {
+                "get": {
+                    "operationId": "view_int",
+                    "description": "",
+                    "tags": ["test_response_encoding"],
+                    "parameters": [],
+                    "responses": {
+                        200: {
+                            "description": "",
+                            "content": {
+                                "application/json": {"schema": {"type": "integer"}}
+                            },
+                        }
+                    },
+                }
+            },
+            "/typed-dict": {
+                "get": {
+                    "operationId": "view_typed_dict",
+                    "description": "",
+                    "tags": ["test_response_encoding"],
+                    "parameters": [],
+                    "responses": {
+                        200: {
+                            "description": "",
+                            "content": {
+                                "application/json": {
+                                    "schema": {
+                                        "$ref": "#/components/schemas/MyTypedDict"
+                                    }
+                                }
+                            },
+                        }
+                    },
+                }
+            },
+            "/json-response": {
+                "get": {
+                    "operationId": "view_json_response",
+                    "description": "",
+                    "tags": ["test_response_encoding"],
+                    "parameters": [],
+                    "responses": {200: {"description": ""}},
+                }
+            },
+        },
+        "components": {
+            "schemas": {
+                "MyPydanticModel": {
+                    "properties": {"a": {"title": "A", "type": "integer"}},
+                    "required": ["a"],
+                    "title": "MyPydanticModel",
+                    "type": "object",
+                },
+                "MyTypedDict": {
+                    "properties": {"a": {"title": "A", "type": "integer"}},
+                    "required": ["a"],
+                    "title": "MyTypedDict",
+                    "type": "object",
+                },
+            }
+        },
+    }
