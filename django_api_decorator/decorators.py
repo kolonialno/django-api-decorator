@@ -439,7 +439,12 @@ def _get_response_encoder(*, type_annotation: Annotation) -> ResponseEncoder:
 
 
 def _json_encoder(*, payload: Any, status: int) -> HttpResponse:
-    return JsonResponse(payload, status=status, safe=False)
+    return JsonResponse(
+        payload,
+        status=status,
+        json_dumps_params={"default": pydantic_encoder},
+        safe=False,
+    )
 
 
 def _pydantic_encoder(payload: Any, status: int) -> HttpResponse:
