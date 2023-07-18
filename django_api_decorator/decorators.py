@@ -121,7 +121,6 @@ def api(
                 # Parse query params and add them to the parameters given to the view.
                 raw_query_params: dict[str, Any] = {}
                 for key in request.GET:
-                    print(f"{key}={request.GET.getlist(key)}")
                     if value := request.GET.getlist(key):
                         raw_query_params[key] = value[0] if len(value) == 1 else value
                     else:
