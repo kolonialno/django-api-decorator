@@ -1,76 +1,19 @@
 import dataclasses
-import inspect
 import logging
 import re
-import typing
 from collections.abc import Callable, Sequence
-from datetime import date
-from typing import TYPE_CHECKING, Any, Union, cast
+from typing import Any, cast
 
 import pydantic
-import pydantic.schema
 from django.http import HttpResponse
 from django.urls.resolvers import RoutePattern, URLPattern, URLResolver
-from pydantic import BaseModel
-from pydantic.utils import get_model
+from pydantic_core import PydanticUndefined
 
-from .type_utils import (
-    get_inner_list_type,
-    is_optional,
-    is_pydantic_model,
-    is_union,
-    unwrap_optional,
-)
 from .types import ApiMeta
-
-if TYPE_CHECKING:
-    from pydantic.dataclasses import Dataclass
 
 logger = logging.getLogger(__name__)
 
 schema_ref = "#/components/schemas/{model}"
-
-
-def is_type_supported(t: type) -> bool:
-    """
-    Controls whether or not we support the provided type as request body or response
-    data.
-    """
-
-    try:
-        return is_pydantic_model(t)
-    except TypeError:
-        return False
-
-
-def name_for_type(t: type) -> str:
-    """
-    Returns OpenAPI schema for the provided type.
-    """
-
-    assert is_type_supported(t)
-
-    # normalize_name removes special characters like [] from generics.
-    # get_model gets the pydantic model, even if a pydantic dataclass is used.
-
-    return pydantic.schema.normalize_name(get_model(t).__name__)
-
-
-def schema_type_ref(t: type, *, is_list: bool = False) -> dict[str, Any]:
-    """
-    Returns a openapi reference to the provided type, and optionally wraps it in an
-    array
-    """
-
-    reference = {"$ref": schema_ref.format(model=name_for_type(t))}
-
-    if is_list:
-        return {
-            "type": "array",
-            "items": reference,
-        }
-
-    return reference
 
 
 def get_resolved_url_patterns(
@@ -144,97 +87,67 @@ def django_path_to_openapi_url_and_parameters(
     return path, parameters
 
 
-def get_schema_for_type_annotation(
-    input_type_annotation: type,
-) -> tuple[dict[str, Any] | None, list[type]]:
-    """
-    Helper function that generates a OpenAPI schema based on an input_type_annotation
-    Supports pydantic models directly, or with Union / list wrappers.
-    """
-
-    type_is_union = is_union(type_annotation=input_type_annotation)
-    if type_is_union:
-        type_annotations = typing.get_args(input_type_annotation)
-    else:
-        type_annotations = (input_type_annotation,)
-
-    # List of schemas we generate based on the return types (to support oneOf union
-    # types)
-    schemas = []
-    inner_type_annotations = []
-
-    for t in type_annotations:
-        type_annotation, type_is_list = get_inner_list_type(t)
-        if type_annotation is not None and is_type_supported(type_annotation):
-            schemas.append(schema_type_ref(type_annotation, is_list=type_is_list))
-            inner_type_annotations.append(type_annotation)
-        else:
-            # If one of the type's are not supported, skip the view
-            return None, []
-
-    if type_is_union and len(schemas) > 0:
-        return {"oneOf": schemas}, inner_type_annotations
-
-    if len(schemas) == 1:
-        return schemas[0], inner_type_annotations
-
-    return None, []
-
-
 def paths_and_types_for_view(
     *, view_name: str, callback: Callable[..., HttpResponse], resolved_url: str
-) -> tuple[dict[str, Any], list[type]]:
+) -> tuple[dict[str, Any], dict[str, Any]]:
     api_meta: ApiMeta | None = getattr(callback, "_api_meta", None)
 
     assert api_meta is not None
 
-    signature = inspect.signature(callback)
-
     # Types that should be included in the schema object (referenced via
     # schema_type_ref)
-    types: list[type] = []
+    components: dict[str, Any] = {}
 
-    schema, return_types = get_schema_for_type_annotation(signature.return_annotation)
+    def to_ref_if_object(schema: dict[str, Any]) -> dict[str, Any]:
+        if schema.get("type", None) == "object" and "title" in schema:
+            name = schema["title"]
+            ref = schema_ref.format(model=name)
+            components[name] = schema
+            return {"$ref": ref}
 
-    if schema:
-        types += return_types
-        api_response = {"content": {"application/json": {"schema": schema}}}
+        return schema
+
+    if api_meta.response_adapter:
+        response_schema = api_meta.response_adapter.json_schema(ref_template=schema_ref)
+        if defs := response_schema.pop("$defs", None):
+            components.update(defs)
+        response_schema = to_ref_if_object(response_schema)
+        api_response = {"content": {"application/json": {"schema": response_schema}}}
     else:
         api_response = {}
-        logger.debug(
-            "Return type of %s (%s) unsupported: %s",
-            resolved_url,
-            view_name,
-            signature.return_annotation,
-        )
 
-    additional_data = {}
+    request_body = {}
+    if api_meta.body_adapter:
+        body_schema = api_meta.body_adapter.json_schema(ref_template=schema_ref)
+        if defs := body_schema.pop("$defs", None):
+            components.update(defs)
 
-    if "body" in signature.parameters:
-        body_schema, body_return_types = get_schema_for_type_annotation(
-            signature.parameters["body"].annotation
-        )
-        if body_schema:
-            types += body_return_types
-            additional_data = {
-                "requestBody": {
-                    "required": True,
-                    "content": {"application/json": {"schema": body_schema}},
-                }
+        body_schema = to_ref_if_object(body_schema)
+
+        request_body = {
+            "requestBody": {
+                "required": True,
+                "content": {"application/json": {"schema": body_schema}},
             }
-        else:
-            logger.debug(
-                "Body type of %s (%s) unsupported: %s",
-                resolved_url,
-                view_name,
-                signature.parameters["body"].annotation,
-            )
+        }
 
-    path, url_parameters = django_path_to_openapi_url_and_parameters(resolved_url)
+    path, parameters = django_path_to_openapi_url_and_parameters(resolved_url)
 
-    query_parameters = openapi_query_parameters(
-        query_params=api_meta.query_params, signature=signature
-    )
+    for name, field in api_meta.query_params_model.model_fields.items():
+        schema = pydantic.TypeAdapter(field.annotation).json_schema(
+            ref_template=schema_ref
+        )
+        schema = to_ref_if_object(schema)
+
+        param = {
+            "name": field.alias or name,
+            "in": "query",
+            "required": field.is_required(),
+            "schema": schema,
+        }
+        if field.default != PydanticUndefined:
+            param["default"] = field.default
+        parameters.append(param)
 
     # Assuming standard django folder structure with [project name]/[app name]/....
     app_name = callback.__module__.split(".")[1]
@@ -248,8 +161,8 @@ def paths_and_types_for_view(
                 "description": callback.__doc__ or "",
                 # Tags are useful for grouping operations in codegen
                 "tags": [app_name],
-                "parameters": url_parameters + query_parameters,
-                **additional_data,
+                "parameters": parameters,
+                **request_body,
                 "responses": {
                     api_meta.response_status: {
                         "description": "",
@@ -260,77 +173,7 @@ def paths_and_types_for_view(
         }
     }
 
-    return paths, types
-
-
-def openapi_query_parameters(
-    *, query_params: list[str], signature: inspect.Signature
-) -> list[dict[str, Any]]:
-    """
-    Converts a function signature and a list of query params into openapi query
-    parameters.
-    """
-
-    parameters = []
-    for query_param in query_params:
-        query_url_name = query_param.replace("_", "-")
-
-        parameter = signature.parameters[query_param]
-
-        annotation = parameter.annotation
-        has_default = parameter.default != inspect.Parameter.empty
-
-        param_is_optional = is_optional(annotation)
-        if param_is_optional:
-            annotation = unwrap_optional(annotation)
-
-        schema = None
-
-        if annotation is str:
-            schema = {"type": "string"}
-
-        if annotation is int:
-            schema = {"type": "integer"}
-
-        if annotation is date:
-            schema = {"type": "string", "format": "date"}
-
-        if annotation is bool:
-            schema = {"type": "boolean"}
-
-        if schema is None:
-            logger.warning(
-                "Could not generate types for query param %s with type %s.",
-                query_url_name,
-                annotation,
-            )
-            continue
-
-        parameters.append(
-            {
-                "name": query_url_name,
-                "in": "query",
-                "required": not (param_is_optional or has_default),
-                "schema": schema,
-            }
-        )
-
-    return parameters
-
-
-def schemas_for_types(api_types: list[type]) -> dict[str, Any]:
-    # This only supports Pydantic models for now.
-    assert all(
-        hasattr(t, "__pydantic_model__") or issubclass(t, BaseModel) for t in api_types
-    )
-
-    return cast(
-        dict[str, Any],
-        pydantic.schema.schema(
-            cast(Sequence[Union[type[BaseModel], type["Dataclass"]]], api_types),
-            ref_template=schema_ref,
-        )["definitions"],
-    )
+    return paths, components
 
 
 def generate_api_spec(
@@ -400,15 +243,15 @@ def generate_api_spec(
             )
 
     api_paths: dict[str, Any] = {}
-    api_types = []
+    api_components = {}
 
     for operation in operations:
-        paths, types = paths_and_types_for_view(
+        paths, components = paths_and_types_for_view(
             view_name=operation.name,
             callback=operation.callback,
             resolved_url=operation.url,
         )
-        api_types += types
+        api_components.update(components)
 
         for path, val in paths.items():
             if path in api_paths:
@@ -417,16 +260,16 @@ def generate_api_spec(
             else:
                 api_paths[path] = val
 
-    api_schemas = schemas_for_types(api_types)
-
     api_spec = {
         "openapi": "3.0.0",
         "info": {"title": "API overview", "version": "0.0.1"},
         "paths": api_paths,
-        "components": {"schemas": api_schemas},
+        "components": {"schemas": api_components},
     }
 
-    logger.info("Generated %s paths and %s schemas", len(api_paths), len(api_schemas))
+    logger.info(
+        "Generated %s paths and %s schemas", len(api_paths), len(api_components)
+    )
     logger.info("%s @api annotated views", len(operations))
 
     return api_spec

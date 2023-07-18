@@ -96,7 +96,10 @@ def test_openapi_spec(client: Client) -> None:
                             "name": "opt-num",
                             "in": "query",
                             "required": False,
-                            "schema": {"type": "integer"},
+                            "schema": {
+                                "anyOf": [{"type": "integer"}, {"type": "null"}]
+                            },
+                            "default": None,
                         },
                         {
                             "name": "date",
@@ -108,7 +111,13 @@ def test_openapi_spec(client: Client) -> None:
                             "name": "opt-date",
                             "in": "query",
                             "required": False,
-                            "schema": {"type": "string", "format": "date"},
+                            "schema": {
+                                "anyOf": [
+                                    {"type": "string", "format": "date"},
+                                    {"type": "null"},
+                                ]
+                            },
+                            "default": None,
                         },
                         {
                             "name": "string",
@@ -120,7 +129,8 @@ def test_openapi_spec(client: Client) -> None:
                             "name": "opt-string",
                             "in": "query",
                             "required": False,
-                            "schema": {"type": "string"},
+                            "schema": {"anyOf": [{"type": "string"}, {"type": "null"}]},
+                            "default": None,
                         },
                         {
                             "name": "boolean",
@@ -132,7 +142,10 @@ def test_openapi_spec(client: Client) -> None:
                             "name": "opt-boolean",
                             "in": "query",
                             "required": False,
-                            "schema": {"type": "boolean"},
+                            "schema": {
+                                "anyOf": [{"type": "boolean"}, {"type": "null"}]
+                            },
+                            "default": None,
                         },
                     ],
                     "requestBody": {
@@ -160,8 +173,8 @@ def test_openapi_spec(client: Client) -> None:
             "schemas": {
                 "State": {
                     "title": "State",
-                    "description": "An enumeration.",
                     "enum": [1, 2],
+                    "type": "integer",
                 },
                 "Response": {
                     "title": "Response",
@@ -178,9 +191,15 @@ def test_openapi_spec(client: Client) -> None:
                     "properties": {
                         "name": {"title": "Name", "type": "string"},
                         "num": {"title": "Num", "type": "integer"},
-                        "d": {"title": "D", "type": "string", "format": "date"},
+                        "d": {
+                            "title": "D",
+                            "anyOf": [
+                                {"type": "string", "format": "date"},
+                                {"type": "null"},
+                            ],
+                        },
                     },
-                    "required": ["name", "num"],
+                    "required": ["name", "num", "d"],
                 },
             }
         },
@@ -225,7 +244,7 @@ def test_return_type_union(client: Client) -> None:
                             "content": {
                                 "application/json": {
                                     "schema": {
-                                        "oneOf": [
+                                        "anyOf": [
                                             {"$ref": "#/components/schemas/A"},
                                             {"$ref": "#/components/schemas/B"},
                                             {"$ref": "#/components/schemas/C"},

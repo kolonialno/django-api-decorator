@@ -17,7 +17,7 @@ def get_api_spec() -> dict[str, Any]:
             "ROOT_URLCONF must be set in settings in order to generate an api spec."
         )
 
-    urlpatterns = import_module(settings.ROOT_URLCONF).urlpatterns  # type: ignore[misc]
+    urlpatterns = import_module(settings.ROOT_URLCONF).urlpatterns
 
     return generate_api_spec(urlpatterns=urlpatterns)
 

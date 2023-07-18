@@ -13,7 +13,7 @@ jobs:
           - black --check .
           - flake8 .
           - mypy .
-        python_version: ["3.10"]
+        python_version: ["3.10", "3.11"]
 
     steps:
       - name: Checkout
