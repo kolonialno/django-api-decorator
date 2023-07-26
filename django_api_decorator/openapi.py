@@ -1,6 +1,7 @@
 import dataclasses
 import logging
 import re
+import textwrap
 from collections.abc import Callable, Sequence
 from typing import Any, cast
 
@@ -158,7 +159,7 @@ def paths_and_types_for_view(
                 "operationId": view_name,
                 # Note: We could consider allowing users to pass a description into
                 # @api() instead of using the function docstring.
-                "description": callback.__doc__ or "",
+                "description": textwrap.dedent(callback.__doc__ or "").strip(),
                 # Tags are useful for grouping operations in codegen
                 "tags": [app_name],
                 "parameters": parameters,
