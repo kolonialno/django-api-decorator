@@ -65,7 +65,7 @@ def test_openapi_spec(client: Client) -> None:
     ]
 
     assert generate_api_spec(urls) == {
-        "openapi": "3.0.0",
+        "openapi": "3.1.0",
         "info": {"title": "API overview", "version": "0.0.1"},
         "paths": {
             "/{path_str}/{path_int}": {
@@ -97,9 +97,9 @@ def test_openapi_spec(client: Client) -> None:
                             "in": "query",
                             "required": False,
                             "schema": {
-                                "anyOf": [{"type": "integer"}, {"type": "null"}]
+                                "anyOf": [{"type": "integer"}, {"type": "null"}],
+                                "default": None,
                             },
-                            "default": None,
                         },
                         {
                             "name": "date",
@@ -115,9 +115,9 @@ def test_openapi_spec(client: Client) -> None:
                                 "anyOf": [
                                     {"type": "string", "format": "date"},
                                     {"type": "null"},
-                                ]
+                                ],
+                                "default": None,
                             },
-                            "default": None,
                         },
                         {
                             "name": "string",
@@ -129,8 +129,10 @@ def test_openapi_spec(client: Client) -> None:
                             "name": "opt-string",
                             "in": "query",
                             "required": False,
-                            "schema": {"anyOf": [{"type": "string"}, {"type": "null"}]},
-                            "default": None,
+                            "schema": {
+                                "anyOf": [{"type": "string"}, {"type": "null"}],
+                                "default": None,
+                            },
                         },
                         {
                             "name": "boolean",
@@ -143,9 +145,9 @@ def test_openapi_spec(client: Client) -> None:
                             "in": "query",
                             "required": False,
                             "schema": {
-                                "anyOf": [{"type": "boolean"}, {"type": "null"}]
+                                "anyOf": [{"type": "boolean"}, {"type": "null"}],
+                                "default": None,
                             },
-                            "default": None,
                         },
                     ],
                     "requestBody": {
@@ -229,7 +231,7 @@ def test_return_type_union(client: Client) -> None:
     ]
 
     assert generate_api_spec(urls) == {
-        "openapi": "3.0.0",
+        "openapi": "3.1.0",
         "info": {"title": "API overview", "version": "0.0.1"},
         "paths": {
             "/": {
