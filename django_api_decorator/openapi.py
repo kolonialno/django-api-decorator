@@ -138,6 +138,8 @@ def paths_and_types_for_view(
             ref_template=schema_ref
         )
         schema = to_ref_if_object(schema)
+        if field.default != PydanticUndefined:
+            schema["default"] = field.default
 
         param = {
             "name": field.alias or name,
@@ -145,8 +147,6 @@ def paths_and_types_for_view(
             "required": field.is_required(),
             "schema": schema,
         }
-        if field.default != PydanticUndefined:
-            param["default"] = field.default
         parameters.append(param)
 
     # Assuming standard django folder structure with [project name]/[app name]/....
