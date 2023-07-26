@@ -262,7 +262,7 @@ def generate_api_spec(
                 api_paths[path] = val
 
     api_spec = {
-        "openapi": "3.0.0",
+        "openapi": "3.1.0",
         "info": {"title": "API overview", "version": "0.0.1"},
         "paths": api_paths,
         "components": {"schemas": api_components},
