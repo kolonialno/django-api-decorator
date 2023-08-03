@@ -104,7 +104,6 @@ def test_response_encoding(url: str, expected_response: bytes, client: Client) -
 
 def test_schema() -> None:
     spec = generate_api_spec(urlpatterns)
-    print(spec)
     assert spec == {
         "openapi": "3.1.0",
         "info": {"title": "API overview", "version": "0.0.1"},
