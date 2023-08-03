@@ -31,6 +31,7 @@ def api(
     response_status: int = 200,
     atomic: bool | None = None,
     auth_check: Callable[[HttpRequest], bool] | None = None,
+    serialize_by_alias: bool = False,
 ) -> Callable[[Callable[P, T]], Callable[P, HttpResponse]]:
     """
     Defines an API view. This handles validation of query parameters, parsing of
@@ -48,6 +49,10 @@ def api(
     * response_status:
         HTTP status code to use if the view _does not_ return an
         Response object, but rather just the data we should return.
+
+    * serialize_by_alias:
+        Is passed as the by_alias argument to TypeAdapter.dump_json(), making
+        the model use the aliases defined in model_config when serializing.
 
     The request body parsing is done by inspecting the view parameter types. If
     the view has a body parameter, we will try to decode the payload to that
@@ -182,7 +187,7 @@ def api(
                 )
 
             # Encode the response from the view to json and create a response object.
-            payload = response_adapter.dump_json(response)
+            payload = response_adapter.dump_json(response, by_alias=serialize_by_alias)
             return HttpResponse(
                 payload, status=response_status, content_type="application/json"
             )
