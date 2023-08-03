@@ -92,7 +92,7 @@ urlpatterns = [
         ("/int", b"1"),
         ("/bool", b"false"),
         ("/pydantic-model", b'{"an_integer":1}'),
-        ("/pydantic-camel-case-model", b'{"anInteger":1}')
+        ("/pydantic-camel-case-model", b'{"anInteger":1}'),
     ],
 )
 @pytest.mark.urls(__name__)
@@ -146,9 +146,9 @@ def test_schema() -> None:
                                         "$ref": "#/components/schemas/MyCamelCasePydanticModel"
                                     }
                                 }
-                            }
+                            },
                         }
-                    }
+                    },
                 }
             },
             "/pydantic-model": {
@@ -236,19 +236,25 @@ def test_schema() -> None:
         "components": {
             "schemas": {
                 "MyCamelCasePydanticModel": {
-                    "properties": {"anInteger": {"title": "Aninteger", "type": "integer"}},
+                    "properties": {
+                        "anInteger": {"title": "Aninteger", "type": "integer"}
+                    },
                     "required": ["anInteger"],
                     "title": "MyCamelCasePydanticModel",
-                    "type": "object"
+                    "type": "object",
                 },
                 "MyPydanticModel": {
-                    "properties": {"an_integer": {"title": "An Integer", "type": "integer"}},
+                    "properties": {
+                        "an_integer": {"title": "An Integer", "type": "integer"}
+                    },
                     "required": ["an_integer"],
                     "title": "MyPydanticModel",
                     "type": "object",
                 },
                 "MyTypedDict": {
-                    "properties": {"an_integer": {"title": "An Integer", "type": "integer"}},
+                    "properties": {
+                        "an_integer": {"title": "An Integer", "type": "integer"}
+                    },
                     "required": ["an_integer"],
                     "title": "MyTypedDict",
                     "type": "object",
