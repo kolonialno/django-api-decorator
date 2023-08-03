@@ -31,6 +31,7 @@ def api(
     response_status: int = 200,
     atomic: bool | None = None,
     auth_check: Callable[[HttpRequest], bool] | None = None,
+    serialize_by_alias: bool = False
 ) -> Callable[[Callable[P, T]], Callable[P, HttpResponse]]:
     """
     Defines an API view. This handles validation of query parameters, parsing of
@@ -182,7 +183,7 @@ def api(
                 )
 
             # Encode the response from the view to json and create a response object.
-            payload = response_adapter.dump_json(response)
+            payload = response_adapter.dump_json(response, by_alias=serialize_by_alias)
             return HttpResponse(
                 payload, status=response_status, content_type="application/json"
             )
