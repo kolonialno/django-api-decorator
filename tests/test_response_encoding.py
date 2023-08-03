@@ -1,10 +1,11 @@
 import random
+import re
 
 import pytest
 from django.http import HttpRequest, JsonResponse
 from django.test.client import Client
 from django.urls import path
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from typing_extensions import TypedDict
 
 from django_api_decorator.decorators import api
@@ -12,21 +13,39 @@ from django_api_decorator.openapi import generate_api_spec
 
 
 class MyTypedDict(TypedDict):
-    a: int
+    an_integer: int
 
 
 class MyPydanticModel(BaseModel):
-    a: int
+    an_integer: int
+
+
+def camel_case(string: str) -> str:
+    """
+    Convert string from snake_case to camelCase
+    """
+
+    _pascal_case = re.sub(r"(?:^|_)(.)", lambda m: m.group(1).upper(), string)
+    return _pascal_case[0].lower() + _pascal_case[1:]
+
+
+class MyCamelCasePydanticModel(BaseModel):
+    model_config = ConfigDict(
+        alias_generator=camel_case,
+        populate_by_name=True,
+    )
+
+    an_integer: int
 
 
 @api(method="GET")
 def view_json_response(r: HttpRequest) -> JsonResponse:
-    return JsonResponse({"a": 1})
+    return JsonResponse({"an_integer": 1})
 
 
 @api(method="GET")
 def view_typed_dict(r: HttpRequest) -> MyTypedDict:
-    return {"a": 1}
+    return {"an_integer": 1}
 
 
 @api(method="GET")
@@ -41,7 +60,12 @@ def view_bool(r: HttpRequest) -> bool:
 
 @api(method="GET")
 def view_pydantic_model(r: HttpRequest) -> MyPydanticModel:
-    return MyPydanticModel(a=1)
+    return MyPydanticModel(an_integer=1)
+
+
+@api(method="GET", serialize_by_alias=True)
+def view_camel_case_pydantic_model(r: HttpRequest) -> MyCamelCasePydanticModel:
+    return MyCamelCasePydanticModel(an_integer=1)
 
 
 @api(method="GET")
@@ -55,6 +79,7 @@ urlpatterns = [
     path("int", view_int),
     path("bool", view_bool),
     path("pydantic-model", view_pydantic_model),
+    path("pydantic-camel-case-model", view_camel_case_pydantic_model),
     path("union", view_union),
 ]
 
@@ -62,11 +87,12 @@ urlpatterns = [
 @pytest.mark.parametrize(
     "url,expected_response",
     [
-        ("/json-response", b'{"a": 1}'),
-        ("/typed-dict", b'{"a":1}'),
+        ("/json-response", b'{"an_integer": 1}'),
+        ("/typed-dict", b'{"an_integer":1}'),
         ("/int", b"1"),
         ("/bool", b"false"),
-        ("/pydantic-model", b'{"a":1}'),
+        ("/pydantic-model", b'{"an_integer":1}'),
+        ("/pydantic-camel-case-model", b'{"anInteger":1}')
     ],
 )
 @pytest.mark.urls(__name__)
@@ -78,6 +104,7 @@ def test_response_encoding(url: str, expected_response: bytes, client: Client) -
 
 def test_schema() -> None:
     spec = generate_api_spec(urlpatterns)
+    print(spec)
     assert spec == {
         "openapi": "3.1.0",
         "info": {"title": "API overview", "version": "0.0.1"},
@@ -103,6 +130,26 @@ def test_schema() -> None:
                             },
                         }
                     },
+                }
+            },
+            "/pydantic-camel-case-model": {
+                "get": {
+                    "operationId": "view_camel_case_pydantic_model",
+                    "description": "",
+                    "tags": ["test_response_encoding"],
+                    "parameters": [],
+                    "responses": {
+                        200: {
+                            "description": "",
+                            "content": {
+                                "application/json": {
+                                    "schema": {
+                                        "$ref": "#/components/schemas/MyCamelCasePydanticModel"
+                                    }
+                                }
+                            }
+                        }
+                    }
                 }
             },
             "/pydantic-model": {
@@ -189,15 +236,21 @@ def test_schema() -> None:
         },
         "components": {
             "schemas": {
+                "MyCamelCasePydanticModel": {
+                    "properties": {"anInteger": {"title": "Aninteger", "type": "integer"}},
+                    "required": ["anInteger"],
+                    "title": "MyCamelCasePydanticModel",
+                    "type": "object"
+                },
                 "MyPydanticModel": {
-                    "properties": {"a": {"title": "A", "type": "integer"}},
-                    "required": ["a"],
+                    "properties": {"an_integer": {"title": "An Integer", "type": "integer"}},
+                    "required": ["an_integer"],
                     "title": "MyPydanticModel",
                     "type": "object",
                 },
                 "MyTypedDict": {
-                    "properties": {"a": {"title": "A", "type": "integer"}},
-                    "required": ["a"],
+                    "properties": {"an_integer": {"title": "An Integer", "type": "integer"}},
+                    "required": ["an_integer"],
                     "title": "MyTypedDict",
                     "type": "object",
                 },
