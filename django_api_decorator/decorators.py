@@ -31,7 +31,7 @@ def api(
     response_status: int = 200,
     atomic: bool | None = None,
     auth_check: Callable[[HttpRequest], bool] | None = None,
-    serialize_by_alias: bool = False
+    serialize_by_alias: bool = False,
 ) -> Callable[[Callable[P, T]], Callable[P, HttpResponse]]:
     """
     Defines an API view. This handles validation of query parameters, parsing of
