@@ -143,7 +143,7 @@ def test_schema() -> None:
                             "content": {
                                 "application/json": {
                                     "schema": {
-                                        "$ref": "#/components/schemas/MyCamelCasePydanticModel"
+                                        "$ref": "#/components/schemas/MyCamelCasePydanticModel"  # noqa: E501
                                     }
                                 }
                             },
