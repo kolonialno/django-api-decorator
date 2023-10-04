@@ -215,7 +215,7 @@ def validate_boolean(value: Any) -> Any:
 
 
 TYPE_MAPPING = {
-    bool: Annotated[bool, BeforeValidator(validate_boolean)],  # type: ignore[call-arg]
+    bool: Annotated[bool, BeforeValidator(validate_boolean)],
 }
 
 
