@@ -12,7 +12,7 @@ packages = [{include = "django_api_decorator"}]
 [tool.poetry.dependencies]
 python = "^3.10"
 Django = ">=3"
-pydantic = "^2.4.2"
+pydantic = "^2.2.1"
 
 
 [tool.poetry.group.dev.dependencies]
