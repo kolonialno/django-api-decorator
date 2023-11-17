@@ -19,20 +19,28 @@ schema_ref = "#/components/schemas/{model}"
 
 def get_resolved_url_patterns(
     base_patterns: Sequence[URLResolver | URLPattern],
-) -> list[tuple[URLPattern, str]]:
+) -> list[tuple[URLPattern, str, str]]:
     """
     Given a list of base URL patterns, this function digs down into the URL hierarchy
     and evaluates the full URLs of all django views that have a simple path (e.g. no
     regex). Returns a list of tuples with each RoutePattern and its full URL.
     """
+    
+    def combine_path(existing:str, append: str | None) -> str:
+        if not append:
+            return existing
+        elif existing == "":
+            return append
+        else:
+            return existing + ":" + append
 
     unresolved_patterns: list[tuple[URLResolver | URLPattern, str]] = [
-        (url_pattern, "/") for url_pattern in base_patterns
+        (url_pattern, "/", "") for url_pattern in base_patterns
     ]
     resolved_urls: list[tuple[URLPattern, str]] = []
 
     while len(unresolved_patterns):
-        url_pattern, url_prefix = unresolved_patterns.pop()
+        url_pattern, url_prefix, reverse_path = unresolved_patterns.pop()
 
         if not isinstance(url_pattern.pattern, RoutePattern):
             logger.debug("Skipping URL that is not simple (e.g. regex or locale url)")
@@ -44,10 +52,10 @@ def get_resolved_url_patterns(
         # If we are dealing with a URL Resolver we should dig further down.
         if isinstance(url_pattern, URLResolver):
             unresolved_patterns += [
-                (child_pattern, url) for child_pattern in url_pattern.url_patterns
+                (child_pattern, url, combine_path(reverse_path, url_pattern.namespace)) for child_pattern in url_pattern.url_patterns
             ]
         else:
-            resolved_urls.append((url_pattern, url))
+            resolved_urls.append((url_pattern, url, combine_path(reverse_path, url_pattern.name)))
 
     return resolved_urls
 
@@ -89,7 +97,7 @@ def django_path_to_openapi_url_and_parameters(
 
 
 def paths_and_types_for_view(
-    *, view_name: str, callback: Callable[..., HttpResponse], resolved_url: str
+    *, view_name: str, callback: Callable[..., HttpResponse], resolved_url: str, reverse_path: str,
 ) -> tuple[dict[str, Any], dict[str, Any]]:
     api_meta: ApiMeta | None = getattr(callback, "_api_meta", None)
 
@@ -162,6 +170,7 @@ def paths_and_types_for_view(
                 "description": textwrap.dedent(callback.__doc__ or "").strip(),
                 # Tags are useful for grouping operations in codegen
                 "tags": [app_name],
+                "x-reverse-path": reverse_path,
                 "parameters": parameters,
                 **request_body,
                 "responses": {
@@ -189,6 +198,7 @@ def generate_api_spec(
         callback: Callable[..., HttpResponse]
         name: str
         url: str
+        reverse_path: str
 
     all_urls = get_resolved_url_patterns(urlpatterns)
 
@@ -196,7 +206,7 @@ def generate_api_spec(
 
     # Iterate through all django views within the url patterns and generate specs for
     # them
-    for pattern, resolved_url in all_urls:
+    for pattern, resolved_url, reverse_path in all_urls:
         if pattern.callback is None:
             continue
 
@@ -226,6 +236,7 @@ def generate_api_spec(
                             f"{pattern.name or pattern.callback.__name__}"
                         ),
                         url=resolved_url,
+                        reverse_path=reverse_path,
                     )
                 )
 
@@ -235,6 +246,7 @@ def generate_api_spec(
                     callback=pattern.callback,
                     name=pattern.name or pattern.callback.__name__,
                     url=resolved_url,
+                    reverse_path=reverse_path,
                 )
             )
 
@@ -251,6 +263,7 @@ def generate_api_spec(
             view_name=operation.name,
             callback=operation.callback,
             resolved_url=operation.url,
+            reverse_path=operation.reverse_path,
         )
         api_components.update(components)
 
