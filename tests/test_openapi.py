@@ -4,7 +4,7 @@ from enum import Enum
 from django.http import HttpRequest
 from django.test.client import Client
 from django.test.utils import override_settings
-from django.urls import path, URLResolver, URLPattern
+from django.urls import URLPattern, URLResolver, path
 from django.urls.resolvers import RoutePattern
 from pydantic import BaseModel
 
