@@ -4,11 +4,12 @@ from enum import Enum
 from django.http import HttpRequest
 from django.test.client import Client
 from django.test.utils import override_settings
-from django.urls import path
+from django.urls import path, URLResolver, URLPattern
+from django.urls.resolvers import RoutePattern
 from pydantic import BaseModel
 
 from django_api_decorator.decorators import api
-from django_api_decorator.openapi import generate_api_spec
+from django_api_decorator.openapi import generate_api_spec, get_resolved_url_patterns
 
 urlpatterns = None
 
@@ -61,7 +62,7 @@ def test_openapi_spec(client: Client) -> None:
         return Response(state=State.OK, num=3)
 
     urls = [
-        path("<str:path_str>/<int:path_int>", view),
+        path("<str:path_str>/<int:path_int>", view, name="view_name"),
     ]
 
     assert generate_api_spec(urls) == {
@@ -70,9 +71,10 @@ def test_openapi_spec(client: Client) -> None:
         "paths": {
             "/{path_str}/{path_int}": {
                 "post": {
-                    "operationId": "view",
+                    "operationId": "view_name",
                     "description": "",
                     "tags": ["test_openapi"],
+                    "x-reverse-path": "view_name",
                     "parameters": [
                         {
                             "name": "path_str",
@@ -239,6 +241,7 @@ def test_return_type_union(client: Client) -> None:
                     "operationId": "view",
                     "description": "",
                     "tags": ["test_openapi"],
+                    "x-reverse-path": "",
                     "parameters": [],
                     "responses": {
                         200: {
@@ -282,3 +285,28 @@ def test_return_type_union(client: Client) -> None:
             }
         },
     }
+
+
+def test_get_resolved_url_patterns():
+    child_pattern = URLPattern(
+        RoutePattern("child_pattern/nested/deep/"), lambda x: x, name="child_view"
+    )
+
+    base_patterns = [
+        URLResolver(
+            pattern=RoutePattern("toplevel_pattern/"),
+            urlconf_name=[
+                child_pattern,
+            ],
+            namespace="top_namespace",
+        )
+    ]
+
+    result = get_resolved_url_patterns(base_patterns)
+    assert result == [
+        (
+            child_pattern,
+            "/toplevel_pattern/child_pattern/nested/deep/",
+            "top_namespace:child_view",
+        )
+    ]

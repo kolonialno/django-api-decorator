@@ -25,8 +25,8 @@ def get_resolved_url_patterns(
     and evaluates the full URLs of all django views that have a simple path (e.g. no
     regex). Returns a list of tuples with each RoutePattern and its full URL.
     """
-    
-    def combine_path(existing:str, append: str | None) -> str:
+
+    def combine_path(existing: str, append: str | None) -> str:
         if not append:
             return existing
         elif existing == "":
@@ -34,10 +34,10 @@ def get_resolved_url_patterns(
         else:
             return existing + ":" + append
 
-    unresolved_patterns: list[tuple[URLResolver | URLPattern, str]] = [
+    unresolved_patterns: list[tuple[URLResolver | URLPattern, str, str]] = [
         (url_pattern, "/", "") for url_pattern in base_patterns
     ]
-    resolved_urls: list[tuple[URLPattern, str]] = []
+    resolved_urls: list[tuple[URLPattern, str, str]] = []
 
     while len(unresolved_patterns):
         url_pattern, url_prefix, reverse_path = unresolved_patterns.pop()
@@ -52,10 +52,13 @@ def get_resolved_url_patterns(
         # If we are dealing with a URL Resolver we should dig further down.
         if isinstance(url_pattern, URLResolver):
             unresolved_patterns += [
-                (child_pattern, url, combine_path(reverse_path, url_pattern.namespace)) for child_pattern in url_pattern.url_patterns
+                (child_pattern, url, combine_path(reverse_path, url_pattern.namespace))
+                for child_pattern in url_pattern.url_patterns
             ]
         else:
-            resolved_urls.append((url_pattern, url, combine_path(reverse_path, url_pattern.name)))
+            resolved_urls.append(
+                (url_pattern, url, combine_path(reverse_path, url_pattern.name))
+            )
 
     return resolved_urls
 
@@ -97,7 +100,11 @@ def django_path_to_openapi_url_and_parameters(
 
 
 def paths_and_types_for_view(
-    *, view_name: str, callback: Callable[..., HttpResponse], resolved_url: str, reverse_path: str,
+    *,
+    view_name: str,
+    callback: Callable[..., HttpResponse],
+    resolved_url: str,
+    reverse_path: str,
 ) -> tuple[dict[str, Any], dict[str, Any]]:
     api_meta: ApiMeta | None = getattr(callback, "_api_meta", None)
 
