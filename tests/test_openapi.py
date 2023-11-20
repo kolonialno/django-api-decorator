@@ -287,7 +287,7 @@ def test_return_type_union(client: Client) -> None:
     }
 
 
-def test_get_resolved_url_patterns():
+def test_get_resolved_url_patterns() -> None:
     child_pattern = URLPattern(
         RoutePattern("child_pattern/nested/deep/"), lambda x: x, name="child_view"
     )
