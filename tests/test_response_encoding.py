@@ -113,6 +113,7 @@ def test_schema() -> None:
                     "operationId": "view_union",
                     "description": "",
                     "tags": ["test_response_encoding"],
+                    "x-reverse-path": "",
                     "parameters": [],
                     "responses": {
                         200: {
@@ -136,6 +137,7 @@ def test_schema() -> None:
                     "operationId": "view_camel_case_pydantic_model",
                     "description": "",
                     "tags": ["test_response_encoding"],
+                    "x-reverse-path": "",
                     "parameters": [],
                     "responses": {
                         200: {
@@ -156,6 +158,7 @@ def test_schema() -> None:
                     "operationId": "view_pydantic_model",
                     "description": "",
                     "tags": ["test_response_encoding"],
+                    "x-reverse-path": "",
                     "parameters": [],
                     "responses": {
                         200: {
@@ -176,6 +179,7 @@ def test_schema() -> None:
                     "operationId": "view_bool",
                     "description": "",
                     "tags": ["test_response_encoding"],
+                    "x-reverse-path": "",
                     "parameters": [],
                     "responses": {
                         200: {
@@ -192,6 +196,7 @@ def test_schema() -> None:
                     "operationId": "view_int",
                     "description": "",
                     "tags": ["test_response_encoding"],
+                    "x-reverse-path": "",
                     "parameters": [],
                     "responses": {
                         200: {
@@ -208,6 +213,7 @@ def test_schema() -> None:
                     "operationId": "view_typed_dict",
                     "description": "",
                     "tags": ["test_response_encoding"],
+                    "x-reverse-path": "",
                     "parameters": [],
                     "responses": {
                         200: {
@@ -228,6 +234,7 @@ def test_schema() -> None:
                     "operationId": "view_json_response",
                     "description": "",
                     "tags": ["test_response_encoding"],
+                    "x-reverse-path": "",
                     "parameters": [],
                     "responses": {200: {"description": ""}},
                 }
