@@ -353,7 +353,7 @@ def test_custom_exception_handler(client: Client, mocker: MockerFixture) -> None
     Test that a custom validation error handler is called
     """
 
-    def handle_exception(e: Exception) -> JsonResponse:
+    def handle_exception(request: HttpRequest, e: Exception) -> JsonResponse:
         return JsonResponse({"error": "Something is wrong here"}, status=400)
 
     class Body(BaseModel):
