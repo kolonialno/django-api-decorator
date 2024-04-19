@@ -296,7 +296,7 @@ class PydanticErrorDict(TypedDict):
 
 def handle_validation_error(
     request: HttpRequest,
-    exception: (ValidationError | pydantic.ValidationError),
+    exception: ValidationError | pydantic.ValidationError,
 ) -> HttpResponse:
     errors: list[str]
     field_errors: Mapping[str, FieldError]
