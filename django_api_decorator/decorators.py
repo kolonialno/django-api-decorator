@@ -21,6 +21,7 @@ P = typing.ParamSpec("P")
 T = typing.TypeVar("T")
 
 Annotation = Any
+ExceptionHandler = Callable[[ValidationError | pydantic.ValidationError], HttpResponse]
 
 
 def api(
@@ -32,6 +33,7 @@ def api(
     atomic: bool | None = None,
     auth_check: Callable[[HttpRequest], bool] | None = None,
     serialize_by_alias: bool = False,
+    validation_error_handler: ExceptionHandler | None = None,
 ) -> Callable[[Callable[P, T]], Callable[P, HttpResponse]]:
     """
     Defines an API view. This handles validation of query parameters, parsing of
@@ -75,6 +77,7 @@ def api(
         if atomic is not None
         else getattr(settings, "API_DECORATOR_DEFAULT_ATOMIC", True)
     )
+    validation_error_handler = validation_error_handler or handle_validation_error
 
     def default_auth_check(request: HttpRequest) -> bool:
         return hasattr(request, "user") and request.user.is_authenticated
@@ -138,7 +141,7 @@ def api(
                 pydantic.ValidationError,
             ) as e:
                 # Normalize and return a unified error message payload
-                return handle_validation_error(exception=e)
+                return validation_error_handler(e)
 
             try:
                 if atomic:
@@ -155,7 +158,7 @@ def api(
             except ValidationError as e:
                 # Normalize and return a unified error message payload, but only
                 # for Django's ValidationError error, not DRF or Pydantic
-                return handle_validation_error(exception=e)
+                return validation_error_handler(e)
 
             except PublicAPIError as exc:
                 # Raised custom errors to frontend
@@ -290,7 +293,6 @@ class PydanticErrorDict(TypedDict):
 
 
 def handle_validation_error(
-    *,
     exception: (ValidationError | pydantic.ValidationError),
 ) -> HttpResponse:
     errors: list[str]

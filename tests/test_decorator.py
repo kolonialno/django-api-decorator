@@ -8,6 +8,7 @@ from django.test.client import Client
 from django.test.utils import override_settings
 from django.urls import path
 from pydantic import BaseModel
+from pytest_mock import MockerFixture
 
 from django_api_decorator.decorators import api
 
@@ -344,3 +345,35 @@ def test_parsing_list(client: Client) -> None:
         )
         assert response.status_code == 400
         assert response.json()["field_errors"].keys() == {"0.num", "1.num", "1.d"}
+
+
+@override_settings(ROOT_URLCONF=__name__)
+def test_custom_exception_handler(client: Client, mocker: MockerFixture) -> None:
+    """
+    Test that a custom validation error handler is called
+    """
+
+    def handle_exception(e: Exception) -> JsonResponse:
+        return JsonResponse({"error": "Something is wrong here"}, status=400)
+
+    class Body(BaseModel):
+        num: int
+        d: datetime.date
+
+    @api(
+        method="POST",
+        login_required=False,
+        validation_error_handler=handle_exception,
+    )
+    def view(request: HttpRequest, body: list[Body]) -> JsonResponse:
+        return JsonResponse({})
+
+    urls = [
+        path("", view),
+    ]
+
+    mocker.patch(f"{__name__}.urlpatterns", urls)
+
+    response = client.post("/", data={}, content_type="application/json")
+    assert response.status_code == 400
+    assert response.json() == {"error": "Something is wrong here"}
