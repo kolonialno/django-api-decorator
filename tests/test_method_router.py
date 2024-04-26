@@ -1,10 +1,9 @@
-from unittest import mock
-
 from django.http import HttpRequest, JsonResponse
 from django.test.client import Client
 from django.test.utils import override_settings
 from django.urls import path
 from pydantic import BaseModel
+from pytest_mock import MockerFixture
 
 from django_api_decorator.decorators import api
 from django_api_decorator.utils import method_router
@@ -13,7 +12,7 @@ urlpatterns = None
 
 
 @override_settings(ROOT_URLCONF=__name__)
-def test_allowed_methods(client: Client) -> None:
+def test_allowed_methods(client: Client, mocker: MockerFixture) -> None:
     @api(method="GET", login_required=False)
     def get_view(request: HttpRequest) -> JsonResponse:
         return JsonResponse({"data": True})
@@ -35,15 +34,14 @@ def test_allowed_methods(client: Client) -> None:
         ),
     ]
 
-    with mock.patch(f"{__name__}.urlpatterns", urls):
-        response = client.get("/api")
-        assert response.status_code == 200
+    mocker.patch(f"{__name__}.urlpatterns", urls)
 
-        response = client.post(
-            "/api", data={"name": "x"}, content_type="application/json"
-        )
-        assert response.status_code == 200
+    response = client.get("/api")
+    assert response.status_code == 200
 
-        response = client.put("/api")
-        assert response.status_code == 405
-        assert response.headers["Allow"] == "GET, POST"
+    response = client.post("/api", data={"name": "x"}, content_type="application/json")
+    assert response.status_code == 200
+
+    response = client.put("/api")
+    assert response.status_code == 405
+    assert response.headers["Allow"] == "GET, POST"

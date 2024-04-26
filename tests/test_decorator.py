@@ -1,6 +1,6 @@
 import datetime
 from functools import wraps
-from unittest import mock
+from unittest.mock import Mock
 
 import pytest
 from django.http import HttpRequest, JsonResponse
@@ -16,7 +16,7 @@ urlpatterns = None
 
 
 @override_settings(ROOT_URLCONF=__name__)
-def test_allowed_methods(client: Client) -> None:
+def test_allowed_methods(client: Client, mocker: MockerFixture) -> None:
     @api(method="GET", login_required=False)
     def get_view(request: HttpRequest) -> JsonResponse:
         return JsonResponse({"data": True})
@@ -30,22 +30,23 @@ def test_allowed_methods(client: Client) -> None:
         path("post", post_view),
     ]
 
-    with mock.patch(f"{__name__}.urlpatterns", urls):
-        response = client.get("/get")
-        assert response.status_code == 200
+    mocker.patch(f"{__name__}.urlpatterns", urls)
 
-        response = client.post("/get")
-        assert response.status_code == 405
+    response = client.get("/get")
+    assert response.status_code == 200
 
-        response = client.get("/post")
-        assert response.status_code == 405
+    response = client.post("/get")
+    assert response.status_code == 405
 
-        response = client.post("/post")
-        assert response.status_code == 200
+    response = client.get("/post")
+    assert response.status_code == 405
+
+    response = client.post("/post")
+    assert response.status_code == 200
 
 
 @override_settings(ROOT_URLCONF=__name__)
-def test_login_required(client: Client) -> None:
+def test_login_required(client: Client, mocker: MockerFixture) -> None:
     @api(method="GET", login_required=True, auth_check=lambda request: True)
     def auth_user_view(request: HttpRequest) -> JsonResponse:
         return JsonResponse({"data": True})
@@ -69,22 +70,23 @@ def test_login_required(client: Client) -> None:
         path("noauth-anonymous", noauth_anonymous_view),
     ]
 
-    with mock.patch(f"{__name__}.urlpatterns", urls):
-        response = client.get("/auth-user")
-        assert response.status_code == 200
+    mocker.patch(f"{__name__}.urlpatterns", urls)
 
-        response = client.get("/auth-anonymous")
-        assert response.status_code == 200
+    response = client.get("/auth-user")
+    assert response.status_code == 200
 
-        response = client.get("/noauth-user")
-        assert response.status_code == 401
+    response = client.get("/auth-anonymous")
+    assert response.status_code == 200
 
-        response = client.get("/noauth-anonymous")
-        assert response.status_code == 200
+    response = client.get("/noauth-user")
+    assert response.status_code == 401
+
+    response = client.get("/noauth-anonymous")
+    assert response.status_code == 200
 
 
 def _create_api_view(view_func, query_params):  # type:ignore
-    collector = mock.Mock()
+    collector = Mock()
 
     @api(
         method="GET",
@@ -227,7 +229,7 @@ def test_path_params(  # type: ignore
 
 
 @override_settings(ROOT_URLCONF=__name__)
-def test_basic_parsing(client: Client) -> None:
+def test_basic_parsing(client: Client, mocker: MockerFixture) -> None:
     class Body(BaseModel):
         pass
 
@@ -242,20 +244,18 @@ def test_basic_parsing(client: Client) -> None:
         path("", view),
     ]
 
-    with mock.patch(f"{__name__}.urlpatterns", urls):
-        # No data is invalid
-        assert client.post("/").status_code == 400
-        # No content_type is invalid
-        assert client.post("/", data={}).status_code == 400
-        # Json content type is ok
-        assert (
-            client.post("/", data={}, content_type="application/json").status_code
-            == 200
-        )
+    mocker.patch(f"{__name__}.urlpatterns", urls)
+
+    # No data is invalid
+    assert client.post("/").status_code == 400
+    # No content_type is invalid
+    assert client.post("/", data={}).status_code == 400
+    # Json content type is ok
+    assert client.post("/", data={}, content_type="application/json").status_code == 200
 
 
 @override_settings(ROOT_URLCONF=__name__)
-def test_parsing_error_propagation(client: Client) -> None:
+def test_parsing_error_propagation(client: Client, mocker: MockerFixture) -> None:
     class Body(BaseModel):
         num: int
         d: datetime.date
@@ -271,33 +271,31 @@ def test_parsing_error_propagation(client: Client) -> None:
         path("", view),
     ]
 
-    with mock.patch(f"{__name__}.urlpatterns", urls):
-        assert (
-            client.post("/", data={}, content_type="application/json").status_code
-            == 400
-        )
-        assert (
-            client.post(
-                "/", data={"num": 3, "d": "2022-01-01"}, content_type="application/json"
-            ).status_code
-            == 200
-        )
-        # Check that field errors propagate
-        response = client.post(
-            "/", data={"num": "x", "d": "2022-01-01"}, content_type="application/json"
-        )
-        assert response.status_code == 400
-        assert response.json()["field_errors"].keys() == {"num"}
+    mocker.patch(f"{__name__}.urlpatterns", urls)
 
-        response = client.post(
-            "/", data={"num": "x", "d": "2022-31-41"}, content_type="application/json"
-        )
-        assert response.status_code == 400
-        assert response.json()["field_errors"].keys() == {"num", "d"}
+    assert client.post("/", data={}, content_type="application/json").status_code == 400
+    assert (
+        client.post(
+            "/", data={"num": 3, "d": "2022-01-01"}, content_type="application/json"
+        ).status_code
+        == 200
+    )
+    # Check that field errors propagate
+    response = client.post(
+        "/", data={"num": "x", "d": "2022-01-01"}, content_type="application/json"
+    )
+    assert response.status_code == 400
+    assert response.json()["field_errors"].keys() == {"num"}
+
+    response = client.post(
+        "/", data={"num": "x", "d": "2022-31-41"}, content_type="application/json"
+    )
+    assert response.status_code == 400
+    assert response.json()["field_errors"].keys() == {"num", "d"}
 
 
 @override_settings(ROOT_URLCONF=__name__)
-def test_parsing_list(client: Client) -> None:
+def test_parsing_list(client: Client, mocker: MockerFixture) -> None:
     class Body(BaseModel):
         num: int
         d: datetime.date
@@ -313,38 +311,36 @@ def test_parsing_list(client: Client) -> None:
         path("", view),
     ]
 
-    with mock.patch(f"{__name__}.urlpatterns", urls):
-        assert (
-            client.post("/", data={}, content_type="application/json").status_code
-            == 400
-        )
+    mocker.patch(f"{__name__}.urlpatterns", urls)
 
-        assert (
-            client.post(
-                "/",
-                data=[],
-                content_type="application/json",
-            ).status_code
-            == 200
-        )
+    assert client.post("/", data={}, content_type="application/json").status_code == 400
 
-        assert (
-            client.post(
-                "/",
-                data=[{"num": 3, "d": "2022-01-01"}],
-                content_type="application/json",
-            ).status_code
-            == 200
-        )
-        # Check that field errors propagate. Only errors from the first element
-        # are shown.
-        response = client.post(
+    assert (
+        client.post(
             "/",
-            data=[{"num": "x", "d": "2022-01-01"}, {"num": "x", "d": "2022-31-41"}],
+            data=[],
             content_type="application/json",
-        )
-        assert response.status_code == 400
-        assert response.json()["field_errors"].keys() == {"0.num", "1.num", "1.d"}
+        ).status_code
+        == 200
+    )
+
+    assert (
+        client.post(
+            "/",
+            data=[{"num": 3, "d": "2022-01-01"}],
+            content_type="application/json",
+        ).status_code
+        == 200
+    )
+    # Check that field errors propagate. Only errors from the first element
+    # are shown.
+    response = client.post(
+        "/",
+        data=[{"num": "x", "d": "2022-01-01"}, {"num": "x", "d": "2022-31-41"}],
+        content_type="application/json",
+    )
+    assert response.status_code == 400
+    assert response.json()["field_errors"].keys() == {"0.num", "1.num", "1.d"}
 
 
 @override_settings(ROOT_URLCONF=__name__)
