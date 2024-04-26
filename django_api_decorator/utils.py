@@ -1,6 +1,8 @@
-from typing import Callable, ParamSpec, cast
+from types import UnionType
+from typing import Any, Callable, List, ParamSpec, Set, Tuple, Union, cast, get_origin
 
 from django.http import HttpRequest, HttpResponse, HttpResponseNotAllowed
+from pydantic import BaseModel
 
 P = ParamSpec("P")
 
@@ -58,3 +60,33 @@ def method_router(
     call_view._method_router_views = views  # type: ignore[attr-defined]
 
     return cast(Callable[..., HttpResponse], call_view)
+
+
+def is_list_type(annotation: Any) -> bool:
+    """
+    Check if the given annotation is a collection type.
+    """
+
+    origin = get_origin(annotation)
+    return origin in (Union, UnionType, List, Tuple, Set, list, set, tuple)
+
+
+def get_list_fields(model: type[BaseModel]) -> set[str]:
+    return {
+        name
+        for name, field in model.model_fields.items()
+        if is_list_type(field.annotation)
+    }
+
+
+def parse_form_encoded_body(
+    request: HttpRequest, list_fields: set[str]
+) -> dict[str, str | list[str] | None]:
+    """
+    Convert request.POST to a format pydantic can take as input
+    """
+
+    return {
+        key: request.POST.getlist(key) if key in list_fields else request.POST.get(key)
+        for key in request.POST
+    }

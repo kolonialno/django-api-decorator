@@ -29,7 +29,6 @@ def test_allowed_methods(client: Client, mocker: MockerFixture) -> None:
         path("get", get_view),
         path("post", post_view),
     ]
-
     mocker.patch(f"{__name__}.urlpatterns", urls)
 
     response = client.get("/get")
@@ -69,7 +68,6 @@ def test_login_required(client: Client, mocker: MockerFixture) -> None:
         path("noauth-user", noauth_user_view),
         path("noauth-anonymous", noauth_anonymous_view),
     ]
-
     mocker.patch(f"{__name__}.urlpatterns", urls)
 
     response = client.get("/auth-user")
@@ -173,12 +171,10 @@ def test_query_params(  # type: ignore
     mocker, client, settings, view, have_url, want_status, want_values
 ):
     collector, api_view = _create_api_view(view, ["query_param"])  # type: ignore
-    urls = [
-        path("", api_view),
-    ]
-
+    urls = [path("", api_view)]
     settings.ROOT_URLCONF = __name__
     mocker.patch(f"{__name__}.urlpatterns", urls)
+
     got = client.get(have_url)
     assert got.status_code == want_status
     if want_values is None:
@@ -213,9 +209,7 @@ def test_path_params(  # type: ignore
     """
 
     collector, api_view = _create_api_view(view, None)  # type: ignore
-    urls = [
-        path(path_spec, api_view),
-    ]
+    urls = [path(path_spec, api_view)]
     settings.ROOT_URLCONF = __name__
     mocker.patch(f"{__name__}.urlpatterns", urls)
 
@@ -240,17 +234,13 @@ def test_basic_parsing(client: Client, mocker: MockerFixture) -> None:
     def view(request: HttpRequest, body: Body) -> JsonResponse:
         return JsonResponse({})
 
-    urls = [
-        path("", view),
-    ]
-
+    urls = [path("", view)]
     mocker.patch(f"{__name__}.urlpatterns", urls)
 
-    # No data is invalid
-    assert client.post("/").status_code == 400
-    # No content_type is invalid
-    assert client.post("/", data={}).status_code == 400
-    # Json content type is ok
+    # Allow empty body with empty type
+    assert client.post("/").status_code == 200
+    assert client.post("/", data={}).status_code == 200
+    # Allow empty dict JSON as well
     assert client.post("/", data={}, content_type="application/json").status_code == 200
 
 
@@ -267,10 +257,7 @@ def test_parsing_error_propagation(client: Client, mocker: MockerFixture) -> Non
     def view(request: HttpRequest, body: Body) -> JsonResponse:
         return JsonResponse({})
 
-    urls = [
-        path("", view),
-    ]
-
+    urls = [path("", view)]
     mocker.patch(f"{__name__}.urlpatterns", urls)
 
     assert client.post("/", data={}, content_type="application/json").status_code == 400
@@ -295,6 +282,112 @@ def test_parsing_error_propagation(client: Client, mocker: MockerFixture) -> Non
 
 
 @override_settings(ROOT_URLCONF=__name__)
+def test_parsing_form_encoded(client: Client, mocker: MockerFixture) -> None:
+    class Body(BaseModel):
+        num: int
+        d: datetime.date
+
+    @api(
+        method="POST",
+        login_required=False,
+    )
+    def view(request: HttpRequest, body: Body) -> JsonResponse:
+        return JsonResponse(body.model_dump(mode="json"))
+
+    urls = [path("", view)]
+    mocker.patch(f"{__name__}.urlpatterns", urls)
+
+    # Test missing fields
+    response = client.post("/", data={})
+    assert response.status_code == 400
+    assert response.json() == {
+        "errors": ["num: Field required", "d: Field required"],
+        "field_errors": {
+            "num": {"code": "missing", "message": "Field required"},
+            "d": {"code": "missing", "message": "Field required"},
+        },
+    }
+
+    response = client.post("/", data={"num": 3, "d": "2022-01-01"})
+    assert response.status_code == 200
+    assert response.json() == {"num": 3, "d": "2022-01-01"}
+
+    # Check that field errors propagate
+    response = client.post("/", data={"num": "x", "d": "2022-01-01"})
+    assert response.status_code == 400
+    assert response.json() == {
+        "errors": [
+            "num: Input should be a valid integer, "
+            "unable to parse string as an integer"
+        ],
+        "field_errors": {
+            "num": {
+                "code": "int_parsing",
+                "message": "Input should be a valid integer, "
+                "unable to parse string as an integer",
+            }
+        },
+    }
+
+    response = client.post("/", data={"num": 1, "d": "2022-31-41"})
+    assert response.status_code == 400
+    assert response.json() == {
+        "errors": [
+            "d: Input should be a valid date or datetime, "
+            "month value is outside expected range of 1-12"
+        ],
+        "field_errors": {
+            "d": {
+                "code": "date_from_datetime_parsing",
+                "message": (
+                    "Input should be a valid date or datetime, "
+                    "month value is outside expected range of 1-12"
+                ),
+            }
+        },
+    }
+
+
+@override_settings(ROOT_URLCONF=__name__)
+def test_parsing_form_encoded_list(client: Client, mocker: MockerFixture) -> None:
+    class Body(BaseModel):
+        numbers: list[int]
+
+    @api(
+        method="POST",
+        login_required=False,
+    )
+    def view(request: HttpRequest, body: Body) -> JsonResponse:
+        return JsonResponse(body.model_dump(mode="json"))
+
+    urls = [path("", view)]
+    mocker.patch(f"{__name__}.urlpatterns", urls)
+
+    response = client.post("/", data={"numbers": [3, 4]})
+    assert response.status_code == 200
+    assert response.json() == {"numbers": [3, 4]}
+
+    # Check that field errors propagate
+    response = client.post("/", data={"numbers": "hello"})
+    assert response.status_code == 400
+    assert response.json() == {
+        "errors": [
+            "numbers.0: Input should be a valid integer, "
+            "unable to parse string as an integer"
+        ],
+        "field_errors": {
+            "numbers.0": {
+                "code": "int_parsing",
+                "message": (
+                    "Input should be a valid integer, "
+                    "unable to parse string as an integer"
+                ),
+            }
+        },
+    }
+
+
+@override_settings(ROOT_URLCONF=__name__)
 def test_parsing_list(client: Client, mocker: MockerFixture) -> None:
     class Body(BaseModel):
         num: int
@@ -307,10 +400,7 @@ def test_parsing_list(client: Client, mocker: MockerFixture) -> None:
     def view(request: HttpRequest, body: list[Body]) -> JsonResponse:
         return JsonResponse({})
 
-    urls = [
-        path("", view),
-    ]
-
+    urls = [path("", view)]
     mocker.patch(f"{__name__}.urlpatterns", urls)
 
     assert client.post("/", data={}, content_type="application/json").status_code == 400
