@@ -16,6 +16,7 @@ from pydantic.functional_validators import BeforeValidator
 from pydantic_core import PydanticUndefined
 
 from .types import ApiMeta, FieldError, PublicAPIError
+from .utils import get_list_fields, parse_form_encoded_body
 
 P = typing.ParamSpec("P")
 T = typing.TypeVar("T")
@@ -101,9 +102,9 @@ def api(
 
         # If the method has a "body" argument, get a function to call to parse
         # the request body into the type expected by the view.
-        body_adapter = None
-        if "body" in signature.parameters:
-            body_adapter = _get_body_adapter(parameter=signature.parameters["body"])
+        list_fields, body_adapter = set[str](), None
+        if body_annotation := signature.parameters.get("body"):
+            list_fields, body_adapter = _get_body_adapter(body_annotation)
 
         # Get a function to use for encoding the value returned from the view
         # into a request we can return to the client.
@@ -126,7 +127,14 @@ def api(
                 # Parse the request body if the request method allows a body and the
                 # view has requested that we should parse the body.
                 if _can_have_body(request.method) and body_adapter:
-                    extra_kwargs["body"] = body_adapter.validate_json(request.body)
+                    if request.content_type in {
+                        "application/x-www-form-urlencoded",
+                        "multipart/form-data",
+                    }:
+                        data = parse_form_encoded_body(request, list_fields)
+                        extra_kwargs["body"] = body_adapter.validate_python(data)
+                    else:
+                        extra_kwargs["body"] = body_adapter.validate_json(request.body)
 
                 # Parse query params and add them to the parameters given to the view.
                 raw_query_params: dict[str, Any] = {}
@@ -261,12 +269,18 @@ def _can_have_body(method: str | None) -> bool:
     return method in ("POST", "PATCH", "PUT")
 
 
-def _get_body_adapter(*, parameter: inspect.Parameter) -> pydantic.TypeAdapter[Any]:
+def _get_body_adapter(
+    parameter: inspect.Parameter,
+) -> tuple[set[str], pydantic.TypeAdapter[Any]]:
     annotation = parameter.annotation
     if annotation is inspect.Parameter.empty:
         raise TypeError("The body parameter must have a type annotation")
 
-    return pydantic.TypeAdapter(annotation)
+    list_fields = set()
+    if isinstance(annotation, type) and issubclass(annotation, pydantic.BaseModel):
+        list_fields = get_list_fields(annotation)
+
+    return list_fields, pydantic.TypeAdapter(annotation)
 
 
 #####################
