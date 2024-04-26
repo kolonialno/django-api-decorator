@@ -349,6 +349,45 @@ def test_parsing_form_encoded(client: Client, mocker: MockerFixture) -> None:
 
 
 @override_settings(ROOT_URLCONF=__name__)
+def test_parsing_form_encoded_list(client: Client, mocker: MockerFixture) -> None:
+    class Body(BaseModel):
+        numbers: list[int]
+
+    @api(
+        method="POST",
+        login_required=False,
+    )
+    def view(request: HttpRequest, body: Body) -> JsonResponse:
+        return JsonResponse(body.model_dump(mode="json"))
+
+    urls = [path("", view)]
+    mocker.patch(f"{__name__}.urlpatterns", urls)
+
+    response = client.post("/", data={"numbers": [3, 4]})
+    assert response.status_code == 200
+    assert response.json() == {"numbers": [3, 4]}
+
+    # Check that field errors propagate
+    response = client.post("/", data={"numbers": "hello"})
+    assert response.status_code == 400
+    assert response.json() == {
+        "errors": [
+            "numbers.0: Input should be a valid integer, "
+            "unable to parse string as an integer"
+        ],
+        "field_errors": {
+            "numbers.0": {
+                "code": "int_parsing",
+                "message": (
+                    "Input should be a valid integer, "
+                    "unable to parse string as an integer"
+                ),
+            }
+        },
+    }
+
+
+@override_settings(ROOT_URLCONF=__name__)
 def test_parsing_list(client: Client, mocker: MockerFixture) -> None:
     class Body(BaseModel):
         num: int

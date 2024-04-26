@@ -277,7 +277,7 @@ def _get_body_adapter(
         raise TypeError("The body parameter must have a type annotation")
 
     list_fields = set()
-    if type(annotation) is type and issubclass(annotation, pydantic.BaseModel):
+    if isinstance(annotation, type) and issubclass(annotation, pydantic.BaseModel):
         list_fields = get_list_fields(annotation)
 
     return list_fields, pydantic.TypeAdapter(annotation)
