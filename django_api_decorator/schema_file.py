@@ -28,7 +28,10 @@ def get_api_spec() -> dict[str, Any]:
         if not isinstance(resolver_or_pattern, URLResolver):
             continue
 
-        app_name, namespace = resolver_or_pattern.app_name, resolver_or_pattern.namespace
+        app_name, namespace = (
+            resolver_or_pattern.app_name,
+            resolver_or_pattern.namespace,
+        )
         if (app_name, namespace) in ignored_resolvers:
             resolvers_to_ignore.append(resolver_or_pattern)
 
