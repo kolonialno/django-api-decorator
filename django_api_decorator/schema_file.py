@@ -45,8 +45,8 @@ def get_api_spec() -> dict[str, Any]:
 def get_path() -> Path:
     if not hasattr(settings, "API_DECORATOR_SCHEMA_PATH"):
         raise ValueError(
-            "API_DECORATOR_SCHEMA_PATH must be set in settings in order to save the api spec "
-            "to a file."
+            "API_DECORATOR_SCHEMA_PATH must be set in settings in order to save the "
+            "api spec to a file."
         )
 
     path = Path(settings.API_DECORATOR_SCHEMA_PATH)  # type: ignore[misc]
