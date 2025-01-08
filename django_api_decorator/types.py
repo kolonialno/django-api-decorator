@@ -22,6 +22,7 @@ class ApiMeta:
     query_params_model: BaseModel
     body_adapter: TypeAdapter[Any] | None
     response_adapter: TypeAdapter[Any] | None
+    tags: list[str] | None
 
 
 class PublicAPIError(Exception):

@@ -37,6 +37,7 @@ def api(
     auth_check: Callable[[HttpRequest], bool] | None = None,
     serialize_by_alias: bool = False,
     validation_error_handler: ExceptionHandler | None = None,
+    tags: list[str] | None = None,
 ) -> Callable[[Callable[P, T]], Callable[P, HttpResponse]]:
     """
     Defines an API view. This handles validation of query parameters, parsing of
@@ -212,6 +213,7 @@ def api(
             body_adapter=body_adapter,
             query_params_model=query_params_model,
             response_adapter=response_adapter,
+            tags=tags,
         )
         return inner
 
