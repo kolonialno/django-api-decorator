@@ -7,7 +7,7 @@
       "bump-patch-for-minor-pre-major": false,
       "draft": false,
       "prerelease": false,
-      "bootstrap-sha": "6d0e04f6d2b6e34a34d10aa73181f15b023eeb3c"
+      "bootstrap-sha": "64e9b686a9941e84b9781c74806f0c98096a8ae1"
     }
   },
   "$schema": "https://raw.githubusercontent.com/googleapis/release-please/main/schemas/config.json"
