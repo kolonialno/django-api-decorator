@@ -6,6 +6,8 @@ from collections.abc import Callable, Sequence
 from typing import Any, cast
 
 import pydantic
+from django.conf import settings
+from django.core.exceptions import ImproperlyConfigured
 from django.http import HttpResponse
 from django.urls.resolvers import RoutePattern, URLPattern, URLResolver
 from pydantic_core import PydanticUndefined
@@ -193,19 +195,55 @@ def paths_and_types_for_view(
     return paths, components
 
 
+@dataclasses.dataclass
+class OpenApiOperation:
+    callback: Callable[..., HttpResponse]
+    name: str
+    url: str
+    reverse_path: str
+    tags: list[str] | None
+
+
+def should_include_operation_in_schema(*, operation: OpenApiOperation) -> bool:
+    """
+    Returns True if the operation should be included in the openapi schema.
+
+    This method uses the operation tags to decide if the operation should be
+    included or not.
+    """
+
+    # Operation is not tagged, we then always include the operation in the schema.
+    if operation.tags is None or not operation.tags:
+        return True
+
+    exclude_tags: list[str] = getattr(settings, "API_DECORATOR_SCHEMA_EXCLUDE_TAGS", [])
+    include_tags: list[str] = getattr(settings, "API_DECORATOR_SCHEMA_INCLUDE_TAGS", [])
+
+    if exclude_tags and include_tags:
+        raise ImproperlyConfigured(
+            "The API_DECORATOR_SCHEMA_EXCLUDE_TAGS and "
+            "API_DECORATOR_SCHEMA_INCLUDE_TAGS are mutually "
+            "exclusive; only one of them can be set at a time."
+        )
+
+    if exclude_tags:
+        if set(exclude_tags) & set(operation.tags):
+            return False
+
+    if include_tags:
+        if not set(include_tags) & set(operation.tags):
+            return False
+
+    # The default is to include the operation in the schema.
+    return True
+
+
 def generate_api_spec(
     urlpatterns: Sequence[URLResolver | URLPattern],
 ) -> dict[str, Any]:
     """
     Entrypoint for generating an API spec. The function input is a list of URL patterns.
     """
-
-    @dataclasses.dataclass
-    class OpenApiOperation:
-        callback: Callable[..., HttpResponse]
-        name: str
-        url: str
-        reverse_path: str
 
     all_urls = get_resolved_url_patterns(urlpatterns)
 
@@ -244,16 +282,19 @@ def generate_api_spec(
                         ),
                         url=resolved_url,
                         reverse_path=reverse_path,
+                        tags=api_meta.tags,
                     )
                 )
 
         elif hasattr(pattern.callback, "_api_meta"):
+            _api_meta: ApiMeta = pattern.callback._api_meta
             operations.append(
                 OpenApiOperation(
                     callback=pattern.callback,
                     name=pattern.name or pattern.callback.__name__,
                     url=resolved_url,
                     reverse_path=reverse_path,
+                    tags=_api_meta.tags,
                 )
             )
 
@@ -266,6 +307,9 @@ def generate_api_spec(
     api_components = {}
 
     for operation in operations:
+        if not should_include_operation_in_schema(operation=operation):
+            continue
+
         paths, components = paths_and_types_for_view(
             view_name=operation.name,
             callback=operation.callback,

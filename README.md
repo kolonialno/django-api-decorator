@@ -92,3 +92,38 @@ documentation](https://docs.pydantic.dev/latest/usage/json_schema/).
 
 The specification is generated using the `generate_api_schemas` management
 command.
+
+### Control Operations Included in the Schema
+
+Controlling which operations are included in the generated schema can be useful.
+Your application might depend on libraries that also use the `django-api-decorator`
+package to build APIs, and you may prefer not to include those in your schema.
+
+This is achieved by defining a set of tags on each view method.
+
+```python
+@api(method="GET", tags=["django-api-decorator"])
+def view(request: HttpRequest) -> None:
+    ...
+```
+
+Views without the tags property set will always be included in the schema.
+
+You can either exclude tags you don't want in your schema or select tags you
+want to include. However, you cannot both include and exclude tags simultaneously.
+
+#### Including Tags in the Schema
+
+Specify the tags to include in your schema in the Django settings file:
+
+```python
+API_DECORATOR_SCHEMA_INCLUDE_TAGS = ["app", ...]
+```
+
+#### Excluding Tags from the Schema
+
+Specify the tags to exclude from your schema in the Django settings file:
+
+```python
+API_DECORATOR_SCHEMA_EXCLUDE_TAGS = ["library", ...]
+```

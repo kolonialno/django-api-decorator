@@ -1,6 +1,8 @@
 import datetime
 from enum import Enum
 
+import pytest
+from django.core.exceptions import ImproperlyConfigured
 from django.http import HttpRequest
 from django.test.client import Client
 from django.test.utils import override_settings
@@ -310,3 +312,198 @@ def test_get_resolved_url_patterns() -> None:
             "top_namespace:child_view",
         )
     ]
+
+
+@override_settings(ROOT_URLCONF=__name__)
+def test_openapi_spec_include_tagged_operations(client: Client) -> None:
+    @api(method="GET", tags=["django-api-decorator"])
+    def view(
+        request: HttpRequest,
+    ) -> None:
+        return None
+
+    urls = [
+        path("view", view, name="view_name"),
+    ]
+
+    assert generate_api_spec(urls) == {
+        "openapi": "3.1.0",
+        "info": {"title": "API overview", "version": "0.0.1"},
+        "paths": {
+            "/view": {
+                "get": {
+                    "operationId": "view_name",
+                    "description": "",
+                    "tags": ["test_openapi"],
+                    "x-reverse-path": "view_name",
+                    "parameters": [],
+                    "responses": {
+                        200: {
+                            "description": "",
+                            "content": {
+                                "application/json": {"schema": {"type": "null"}}
+                            },
+                        }
+                    },
+                }
+            }
+        },
+        "components": {"schemas": {}},
+    }
+
+
+@override_settings(
+    ROOT_URLCONF=__name__,
+    API_DECORATOR_SCHEMA_EXCLUDE_TAGS=["test"],
+    API_DECORATOR_SCHEMA_INCLUDE_TAGS=["test"],
+)
+def test_openapi_spec_bad_tag_include_exclude(client: Client) -> None:
+    @api(method="GET", tags=["django-api-decorator"])
+    def view(
+        request: HttpRequest,
+    ) -> None:
+        return None
+
+    urls = [
+        path("view", view, name="view_name"),
+    ]
+
+    with pytest.raises(ImproperlyConfigured):
+        generate_api_spec(urls)
+
+
+@override_settings(
+    ROOT_URLCONF=__name__,
+    API_DECORATOR_SCHEMA_INCLUDE_TAGS=["test"],
+)
+def test_openapi_spec_include_operations_without_tags(client: Client) -> None:
+    @api(method="GET")
+    def view(
+        request: HttpRequest,
+    ) -> None:
+        return None
+
+    urls = [
+        path("view", view, name="view_name"),
+    ]
+
+    assert generate_api_spec(urls) == {
+        "openapi": "3.1.0",
+        "info": {"title": "API overview", "version": "0.0.1"},
+        "paths": {
+            "/view": {
+                "get": {
+                    "operationId": "view_name",
+                    "description": "",
+                    "tags": ["test_openapi"],
+                    "x-reverse-path": "view_name",
+                    "parameters": [],
+                    "responses": {
+                        200: {
+                            "description": "",
+                            "content": {
+                                "application/json": {"schema": {"type": "null"}}
+                            },
+                        }
+                    },
+                }
+            }
+        },
+        "components": {"schemas": {}},
+    }
+
+
+@override_settings(
+    ROOT_URLCONF=__name__,
+    API_DECORATOR_SCHEMA_EXCLUDE_TAGS=["a"],
+)
+def test_openapi_spec_exclude_operation(client: Client) -> None:
+    @api(method="GET", tags=["a"])
+    def a(
+        request: HttpRequest,
+    ) -> None:
+        return None
+
+    @api(method="GET", tags=["b"])
+    def b(
+        request: HttpRequest,
+    ) -> None:
+        return None
+
+    urls = [
+        path("a", a, name="a"),
+        path("b", b, name="b"),
+    ]
+
+    assert generate_api_spec(urls) == {
+        "openapi": "3.1.0",
+        "info": {"title": "API overview", "version": "0.0.1"},
+        "paths": {
+            "/b": {
+                "get": {
+                    "operationId": "b",
+                    "description": "",
+                    "tags": ["test_openapi"],
+                    "x-reverse-path": "b",
+                    "parameters": [],
+                    "responses": {
+                        200: {
+                            "description": "",
+                            "content": {
+                                "application/json": {"schema": {"type": "null"}}
+                            },
+                        }
+                    },
+                }
+            }
+        },
+        "components": {"schemas": {}},
+    }
+
+
+@override_settings(
+    ROOT_URLCONF=__name__,
+    API_DECORATOR_SCHEMA_INCLUDE_TAGS=["b"],
+)
+def test_openapi_spec_include_operation(client: Client) -> None:
+    @api(method="GET", tags=["a"])
+    def a(
+        request: HttpRequest,
+    ) -> None:
+        return None
+
+    @api(method="GET", tags=["b"])
+    def b(
+        request: HttpRequest,
+    ) -> None:
+        return None
+
+    urls = [
+        path("a", a, name="a"),
+        path("b", b, name="b"),
+    ]
+
+    assert generate_api_spec(urls) == {
+        "openapi": "3.1.0",
+        "info": {"title": "API overview", "version": "0.0.1"},
+        "paths": {
+            "/b": {
+                "get": {
+                    "operationId": "b",
+                    "description": "",
+                    "tags": ["test_openapi"],
+                    "x-reverse-path": "b",
+                    "parameters": [],
+                    "responses": {
+                        200: {
+                            "description": "",
+                            "content": {
+                                "application/json": {"schema": {"type": "null"}}
+                            },
+                        }
+                    },
+                }
+            }
+        },
+        "components": {"schemas": {}},
+    }
