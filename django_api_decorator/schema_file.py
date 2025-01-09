@@ -1,5 +1,6 @@
 import json
 import logging
+import warnings
 from importlib import import_module
 from pathlib import Path
 from typing import Any
@@ -21,6 +22,15 @@ def get_api_spec() -> dict[str, Any]:
     urlpatterns = import_module(settings.ROOT_URLCONF).urlpatterns
 
     ignored_resolvers = getattr(settings, "API_DECORATOR_SCHEMA_IGNORED_RESOLVERS", [])
+    if ignored_resolvers:
+        warnings.warn(
+            "API_DECORATOR_SCHEMA_IGNORED_RESOLVERS is deprecated, use "
+            "API_DECORATOR_SCHEMA_EXCLUDE_TAGS or API_DECORATOR_SCHEMA_INCLUDE_TAGS "
+            "instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+
     resolvers_to_ignore = []
 
     # iterate through urlpatterns to find resolvers to remove.
