@@ -492,3 +492,36 @@ def test_schema_without_by_alias() -> None:
             }
         },
     }
+
+
+@override_settings(
+    API_DECORATOR_GENERATE_SCHEMA_BY_ALIAS=False,
+)
+def test_schema_without_by_alias() -> None:
+    """
+    Only testing the schemas here as the paths are the same as in the
+    test_schema function above. We only care about the caseing of the
+    properties in this test, as that is the only thing that should change
+    when API_DECORATOR_GENERATE_SCHEMA_BY_ALIAS is set to False.
+    """
+    spec = generate_api_spec(urlpatterns)
+    assert spec["components"]["schemas"] == {
+        "MyCamelCasePydanticModel": {
+            "properties": {"an_integer": {"title": "An Integer", "type": "integer"}},
+            "required": ["an_integer"],
+            "title": "MyCamelCasePydanticModel",
+            "type": "object",
+        },
+        "MyPydanticModel": {
+            "properties": {"an_integer": {"title": "An Integer", "type": "integer"}},
+            "required": ["an_integer"],
+            "title": "MyPydanticModel",
+            "type": "object",
+        },
+        "MyTypedDict": {
+            "properties": {"an_integer": {"title": "An Integer", "type": "integer"}},
+            "required": ["an_integer"],
+            "title": "MyTypedDict",
+            "type": "object",
+        },
+    }
