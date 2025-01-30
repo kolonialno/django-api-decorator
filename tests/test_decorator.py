@@ -11,6 +11,7 @@ from pydantic import BaseModel
 from pytest_mock import MockerFixture
 
 from django_api_decorator.decorators import api
+from django_api_decorator.types import Query
 
 urlpatterns = None
 
@@ -463,3 +464,29 @@ def test_custom_exception_handler(client: Client, mocker: MockerFixture) -> None
     response = client.post("/", data={}, content_type="application/json")
     assert response.status_code == 400
     assert response.json() == {"error": "Something is wrong here"}
+
+
+@override_settings(ROOT_URLCONF=__name__)
+def test_query_annotation_type(client: Client, mocker: MockerFixture) -> None:
+    """
+    Test defining query parameters using type annotations instead of the
+    query_params argument
+    """
+
+    @api(method="GET", login_required=False)
+    def get_view(request: HttpRequest, number: Query[int]) -> JsonResponse:
+        return JsonResponse({"number": number})
+
+    urls = [
+        path("", get_view),
+    ]
+    mocker.patch(f"{__name__}.urlpatterns", urls)
+
+    # Without required param
+    response = client.get("/")
+    assert response.status_code == 400
+
+    # Without required param
+    response = client.get("/", data={"number": 10})
+    assert response.status_code == 200
+    assert response.json() == {"number": 10}

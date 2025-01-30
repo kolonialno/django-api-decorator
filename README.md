@@ -28,6 +28,8 @@ from simple types to dataclasses and typed dicts.
 Here's a simple example:
 
 ```python
+from django_api_decorator.decorators import api
+
 @api(method="GET")
 def list_some_numbers(request: HttpRequest) -> list[int]:
     return [1, 2, 3, 4]
@@ -40,8 +42,10 @@ You can also specify query parameters, that will be decoded according to the
 specified type annotations:
 
 ```python
-@api(method="GET", query_params=["count"])
-def list_some_numbers(request: HttpRequest, count: int) -> list[int]:
+from django_api_decorator.types import Query
+
+@api(method="GET")
+def list_some_numbers(request: HttpRequest, count: Query[int]) -> list[int]:
     return [random.randint(0, 10) for _ in range(count)]
 ```
 
