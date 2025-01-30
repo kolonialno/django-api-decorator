@@ -56,7 +56,16 @@ def view_pydantic_model(r: HttpRequest) -> MyPydanticModel:
 
 
 @api(method="GET", serialize_by_alias=True)
-def view_camel_case_pydantic_model(r: HttpRequest) -> MyCamelCasePydanticModel:
+def view_camel_case_pydantic_model_with_serialize_true(
+    r: HttpRequest,
+) -> MyCamelCasePydanticModel:
+    return MyCamelCasePydanticModel(an_integer=1)
+
+
+@api(method="GET", serialize_by_alias=False)
+def view_camel_case_pydantic_model_with_serialize_false(
+    r: HttpRequest,
+) -> MyCamelCasePydanticModel:
     return MyCamelCasePydanticModel(an_integer=1)
 
 
@@ -71,7 +80,14 @@ urlpatterns = [
     path("int", view_int),
     path("bool", view_bool),
     path("pydantic-model", view_pydantic_model),
-    path("pydantic-camel-case-model", view_camel_case_pydantic_model),
+    path(
+        "pydantic-camel-case-model-with-serialize-false",
+        view_camel_case_pydantic_model_with_serialize_false,
+    ),
+    path(
+        "pydantic-camel-case-model-with-serialize-true",
+        view_camel_case_pydantic_model_with_serialize_true,
+    ),
     path("union", view_union),
 ]
 
@@ -84,7 +100,8 @@ urlpatterns = [
         ("/int", b"1"),
         ("/bool", b"false"),
         ("/pydantic-model", b'{"an_integer":1}'),
-        ("/pydantic-camel-case-model", b'{"anInteger":1}'),
+        ("/pydantic-camel-case-model-with-serialize-false", b'{"an_integer":1}'),
+        ("/pydantic-camel-case-model-with-serialize-true", b'{"anInteger":1}'),
     ],
 )
 @pytest.mark.urls(__name__)
@@ -124,9 +141,30 @@ def test_schema() -> None:
                     },
                 }
             },
-            "/pydantic-camel-case-model": {
+            "/pydantic-camel-case-model-with-serialize-false": {
                 "get": {
-                    "operationId": "view_camel_case_pydantic_model",
+                    "operationId": "view_camel_case_pydantic_model_with_serialize_false",
+                    "description": "",
+                    "tags": ["test_response_encoding"],
+                    "x-reverse-path": "",
+                    "parameters": [],
+                    "responses": {
+                        200: {
+                            "description": "",
+                            "content": {
+                                "application/json": {
+                                    "schema": {
+                                        "$ref": "#/components/schemas/MyCamelCasePydanticModel"  # noqa: E501
+                                    }
+                                }
+                            },
+                        }
+                    },
+                }
+            },
+            "/pydantic-camel-case-model-with-serialize-true": {
+                "get": {
+                    "operationId": "view_camel_case_pydantic_model_with_serialize_true",
                     "description": "",
                     "tags": ["test_response_encoding"],
                     "x-reverse-path": "",
@@ -296,9 +334,30 @@ def test_schema_without_by_alias() -> None:
                     },
                 }
             },
-            "/pydantic-camel-case-model": {
+            "/pydantic-camel-case-model-with-serialize-false": {
                 "get": {
-                    "operationId": "view_camel_case_pydantic_model",
+                    "operationId": "view_camel_case_pydantic_model_with_serialize_false",
+                    "description": "",
+                    "tags": ["test_response_encoding"],
+                    "x-reverse-path": "",
+                    "parameters": [],
+                    "responses": {
+                        200: {
+                            "description": "",
+                            "content": {
+                                "application/json": {
+                                    "schema": {
+                                        "$ref": "#/components/schemas/MyCamelCasePydanticModel"  # noqa: E501
+                                    }
+                                }
+                            },
+                        }
+                    },
+                }
+            },
+            "/pydantic-camel-case-model-with-serialize-true": {
+                "get": {
+                    "operationId": "view_camel_case_pydantic_model_with_serialize_true",
                     "description": "",
                     "tags": ["test_response_encoding"],
                     "x-reverse-path": "",
