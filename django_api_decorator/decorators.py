@@ -122,6 +122,9 @@ def api(
             if login_required and not _auth_check(request):
                 return JsonResponse({"errors": ["Login required"]}, status=401)
 
+            # Check if the request has requested a specific by_alias value.
+            request_serialize_by_alias = kwargs.pop("request_serialize_by_alias", None)
+
             try:
                 extra_kwargs = {}
 
@@ -200,8 +203,15 @@ def api(
                     f"{type(response)}"
                 )
 
+            # Default by_alias to the decorator provided value as would be expected
+            # by the client and the view.
+            by_alias = serialize_by_alias
+            # Enable overriding the by_alias value if the request asks for it.
+            if request_serialize_by_alias is not None:
+                by_alias = request_serialize_by_alias
+
             # Encode the response from the view to json and create a response object.
-            payload = response_adapter.dump_json(response, by_alias=serialize_by_alias)
+            payload = response_adapter.dump_json(response, by_alias=by_alias)
             return HttpResponse(
                 payload, status=response_status, content_type="application/json"
             )
