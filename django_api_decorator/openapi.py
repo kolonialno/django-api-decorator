@@ -109,6 +109,9 @@ def paths_and_types_for_view(
     reverse_path: str,
 ) -> tuple[dict[str, Any], dict[str, Any]]:
     api_meta: ApiMeta | None = getattr(callback, "_api_meta", None)
+    generate_schema_by_alias = getattr(
+        settings, "API_DECORATOR_GENERATE_SCHEMA_BY_ALIAS", True
+    )
 
     assert api_meta is not None
 
@@ -126,7 +129,9 @@ def paths_and_types_for_view(
         return schema
 
     if api_meta.response_adapter:
-        response_schema = api_meta.response_adapter.json_schema(ref_template=schema_ref)
+        response_schema = api_meta.response_adapter.json_schema(
+            ref_template=schema_ref, by_alias=generate_schema_by_alias
+        )
         if defs := response_schema.pop("$defs", None):
             components.update(defs)
         response_schema = to_ref_if_object(response_schema)
@@ -136,7 +141,9 @@ def paths_and_types_for_view(
 
     request_body = {}
     if api_meta.body_adapter:
-        body_schema = api_meta.body_adapter.json_schema(ref_template=schema_ref)
+        body_schema = api_meta.body_adapter.json_schema(
+            ref_template=schema_ref, by_alias=generate_schema_by_alias
+        )
         if defs := body_schema.pop("$defs", None):
             components.update(defs)
 
@@ -153,7 +160,7 @@ def paths_and_types_for_view(
 
     for name, field in api_meta.query_params_model.model_fields.items():
         schema = pydantic.TypeAdapter(field.annotation).json_schema(
-            ref_template=schema_ref
+            ref_template=schema_ref, by_alias=generate_schema_by_alias
         )
         schema = to_ref_if_object(schema)
         if field.default != PydanticUndefined:

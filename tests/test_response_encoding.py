@@ -1,11 +1,12 @@
 import random
-import re
 
 import pytest
 from django.http import HttpRequest, JsonResponse
 from django.test.client import Client
+from django.test.utils import override_settings
 from django.urls import path
 from pydantic import BaseModel, ConfigDict
+from pydantic.alias_generators import to_camel
 from typing_extensions import TypedDict
 
 from django_api_decorator.decorators import api
@@ -20,18 +21,9 @@ class MyPydanticModel(BaseModel):
     an_integer: int
 
 
-def camel_case(string: str) -> str:
-    """
-    Convert string from snake_case to camelCase
-    """
-
-    _pascal_case = re.sub(r"(?:^|_)(.)", lambda m: m.group(1).upper(), string)
-    return _pascal_case[0].lower() + _pascal_case[1:]
-
-
 class MyCamelCasePydanticModel(BaseModel):
     model_config = ConfigDict(
-        alias_generator=camel_case,
+        alias_generator=to_camel,
         populate_by_name=True,
     )
 
@@ -247,6 +239,178 @@ def test_schema() -> None:
                         "anInteger": {"title": "Aninteger", "type": "integer"}
                     },
                     "required": ["anInteger"],
+                    "title": "MyCamelCasePydanticModel",
+                    "type": "object",
+                },
+                "MyPydanticModel": {
+                    "properties": {
+                        "an_integer": {"title": "An Integer", "type": "integer"}
+                    },
+                    "required": ["an_integer"],
+                    "title": "MyPydanticModel",
+                    "type": "object",
+                },
+                "MyTypedDict": {
+                    "properties": {
+                        "an_integer": {"title": "An Integer", "type": "integer"}
+                    },
+                    "required": ["an_integer"],
+                    "title": "MyTypedDict",
+                    "type": "object",
+                },
+            }
+        },
+    }
+
+
+@override_settings(
+    API_DECORATOR_GENERATE_SCHEMA_BY_ALIAS=False,
+)
+def test_schema_without_by_alias() -> None:
+    spec = generate_api_spec(urlpatterns)
+    assert spec == {
+        "openapi": "3.1.0",
+        "info": {"title": "API overview", "version": "0.0.1"},
+        "paths": {
+            "/union": {
+                "get": {
+                    "operationId": "view_union",
+                    "description": "",
+                    "tags": ["test_response_encoding"],
+                    "x-reverse-path": "",
+                    "parameters": [],
+                    "responses": {
+                        200: {
+                            "description": "",
+                            "content": {
+                                "application/json": {
+                                    "schema": {
+                                        "anyOf": [
+                                            {"type": "integer"},
+                                            {"type": "string"},
+                                        ]
+                                    }
+                                }
+                            },
+                        }
+                    },
+                }
+            },
+            "/pydantic-camel-case-model": {
+                "get": {
+                    "operationId": "view_camel_case_pydantic_model",
+                    "description": "",
+                    "tags": ["test_response_encoding"],
+                    "x-reverse-path": "",
+                    "parameters": [],
+                    "responses": {
+                        200: {
+                            "description": "",
+                            "content": {
+                                "application/json": {
+                                    "schema": {
+                                        "$ref": "#/components/schemas/MyCamelCasePydanticModel"  # noqa: E501
+                                    }
+                                }
+                            },
+                        }
+                    },
+                }
+            },
+            "/pydantic-model": {
+                "get": {
+                    "operationId": "view_pydantic_model",
+                    "description": "",
+                    "tags": ["test_response_encoding"],
+                    "x-reverse-path": "",
+                    "parameters": [],
+                    "responses": {
+                        200: {
+                            "description": "",
+                            "content": {
+                                "application/json": {
+                                    "schema": {
+                                        "$ref": "#/components/schemas/MyPydanticModel"
+                                    }
+                                }
+                            },
+                        }
+                    },
+                }
+            },
+            "/bool": {
+                "get": {
+                    "operationId": "view_bool",
+                    "description": "",
+                    "tags": ["test_response_encoding"],
+                    "x-reverse-path": "",
+                    "parameters": [],
+                    "responses": {
+                        200: {
+                            "description": "",
+                            "content": {
+                                "application/json": {"schema": {"type": "boolean"}}
+                            },
+                        }
+                    },
+                }
+            },
+            "/int": {
+                "get": {
+                    "operationId": "view_int",
+                    "description": "",
+                    "tags": ["test_response_encoding"],
+                    "x-reverse-path": "",
+                    "parameters": [],
+                    "responses": {
+                        200: {
+                            "description": "",
+                            "content": {
+                                "application/json": {"schema": {"type": "integer"}}
+                            },
+                        }
+                    },
+                }
+            },
+            "/typed-dict": {
+                "get": {
+                    "operationId": "view_typed_dict",
+                    "description": "",
+                    "tags": ["test_response_encoding"],
+                    "x-reverse-path": "",
+                    "parameters": [],
+                    "responses": {
+                        200: {
+                            "description": "",
+                            "content": {
+                                "application/json": {
+                                    "schema": {
+                                        "$ref": "#/components/schemas/MyTypedDict"
+                                    }
+                                }
+                            },
+                        }
+                    },
+                }
+            },
+            "/json-response": {
+                "get": {
+                    "operationId": "view_json_response",
+                    "description": "",
+                    "tags": ["test_response_encoding"],
+                    "x-reverse-path": "",
+                    "parameters": [],
+                    "responses": {200: {"description": ""}},
+                }
+            },
+        },
+        "components": {
+            "schemas": {
+                "MyCamelCasePydanticModel": {
+                    "properties": {
+                        "an_integer": {"title": "An Integer", "type": "integer"}
+                    },
+                    "required": ["an_integer"],
                     "title": "MyCamelCasePydanticModel",
                     "type": "object",
                 },
