@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.6.0](https://github.com/kolonialno/django-api-decorator/compare/v0.5.2...v0.6.0) (2025-01-30)
+
+
+### Features
+
+* Add `request_serialize_by_alias` override from request ([#35](https://github.com/kolonialno/django-api-decorator/issues/35)) ([4a34e3b](https://github.com/kolonialno/django-api-decorator/commit/4a34e3b3c34a7b799499e87ec5a163f317618e7d))
+* Make it possible to disable by_alias for schema generation ([#33](https://github.com/kolonialno/django-api-decorator/issues/33)) ([e061fe4](https://github.com/kolonialno/django-api-decorator/commit/e061fe4899b5b431f003dcf210c2d1eca00210b2))
+
 ## [0.5.2](https://github.com/kolonialno/django-api-decorator/compare/v0.5.1...v0.5.2) (2025-01-10)
 
 
