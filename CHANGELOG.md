@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.7.0](https://github.com/kolonialno/django-api-decorator/compare/v0.6.0...v0.7.0) (2025-02-03)
+
+
+### Features
+
+* Make sure tags flow from OpenApiOperation to path tags ([#36](https://github.com/kolonialno/django-api-decorator/issues/36)) ([a26bb37](https://github.com/kolonialno/django-api-decorator/commit/a26bb37a0a59e219707754a1fd6518a208695fcc))
+
 ## [0.6.0](https://github.com/kolonialno/django-api-decorator/compare/v0.5.2...v0.6.0) (2025-01-30)
 
 
