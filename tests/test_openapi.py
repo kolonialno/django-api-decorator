@@ -334,7 +334,7 @@ def test_openapi_spec_include_tagged_operations(client: Client) -> None:
                 "get": {
                     "operationId": "view_name",
                     "description": "",
-                    "tags": ["test_openapi"],
+                    "tags": ["django-api-decorator", "test_openapi"],
                     "x-reverse-path": "view_name",
                     "parameters": [],
                     "responses": {
@@ -443,7 +443,7 @@ def test_openapi_spec_exclude_operation(client: Client) -> None:
                 "get": {
                     "operationId": "b",
                     "description": "",
-                    "tags": ["test_openapi"],
+                    "tags": ["b", "test_openapi"],
                     "x-reverse-path": "b",
                     "parameters": [],
                     "responses": {
@@ -491,7 +491,7 @@ def test_openapi_spec_include_operation(client: Client) -> None:
                 "get": {
                     "operationId": "b",
                     "description": "",
-                    "tags": ["test_openapi"],
+                    "tags": ["b", "test_openapi"],
                     "x-reverse-path": "b",
                     "parameters": [],
                     "responses": {

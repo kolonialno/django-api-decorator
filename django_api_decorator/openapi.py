@@ -107,6 +107,7 @@ def paths_and_types_for_view(
     callback: Callable[..., HttpResponse],
     resolved_url: str,
     reverse_path: str,
+    tags: list[str] | None,
 ) -> tuple[dict[str, Any], dict[str, Any]]:
     api_meta: ApiMeta | None = getattr(callback, "_api_meta", None)
     generate_schema_by_alias = getattr(
@@ -177,6 +178,10 @@ def paths_and_types_for_view(
     # Assuming standard django folder structure with [project name]/[app name]/....
     app_name = callback.__module__.split(".")[1]
 
+    # Add app name to tags if not already present and sort alphabetically
+    # This makes there are no duplicate tags in the schema
+    ordered_tags = sorted(set([app_name, *tags])) if tags else [app_name]
+
     paths = {
         path: {
             api_meta.method.lower(): {
@@ -185,7 +190,7 @@ def paths_and_types_for_view(
                 # @api() instead of using the function docstring.
                 "description": textwrap.dedent(callback.__doc__ or "").strip(),
                 # Tags are useful for grouping operations in codegen
-                "tags": [app_name],
+                "tags": ordered_tags,
                 "x-reverse-path": reverse_path,
                 "parameters": parameters,
                 **request_body,
@@ -322,6 +327,7 @@ def generate_api_spec(
             callback=operation.callback,
             resolved_url=operation.url,
             reverse_path=operation.reverse_path,
+            tags=operation.tags,
         )
         api_components.update(components)
 
