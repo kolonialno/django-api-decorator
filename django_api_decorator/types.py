@@ -25,6 +25,11 @@ class ApiMeta:
     tags: list[str] | None
 
 
+class OpenApiServer(BaseModel):
+    url: str
+    description: str | None = None
+
+
 class PublicAPIError(Exception):
     """
     Exception for public facing errors.
