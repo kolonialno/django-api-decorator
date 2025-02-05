@@ -353,7 +353,7 @@ def generate_api_spec(
             ]
         except Exception as e:
             raise ImproperlyConfigured(
-                "API_DECORATOR_SERVERS['servers'] must be a list of OpenApiServer objects"
+                "Servers must be a list of OpenApiServer objects"
             ) from e
 
         api_spec["servers"] = [server.model_dump() for server in open_api_servers]
