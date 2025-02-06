@@ -507,3 +507,135 @@ def test_openapi_spec_include_operation(client: Client) -> None:
         },
         "components": {"schemas": {}},
     }
+
+
+@override_settings(
+    ROOT_URLCONF=__name__,
+    API_DECORATOR_SERVERS={"servers": [{"url": "https://api.example.com"}]},
+)
+def test_openapi_spec_with_servers_with_url(client: Client) -> None:
+    @api(method="GET")
+    def view(
+        request: HttpRequest,
+    ) -> None:
+        return None
+
+    urls = [
+        path("view", view, name="view"),
+    ]
+
+    assert generate_api_spec(urls) == {
+        "openapi": "3.1.0",
+        "info": {"title": "API overview", "version": "0.0.1"},
+        "servers": [{"url": "https://api.example.com", "description": None}],
+        "paths": {
+            "/view": {
+                "get": {
+                    "operationId": "view",
+                    "description": "",
+                    "tags": ["test_openapi"],
+                    "x-reverse-path": "view",
+                    "parameters": [],
+                    "responses": {
+                        200: {
+                            "description": "",
+                            "content": {
+                                "application/json": {"schema": {"type": "null"}}
+                            },
+                        }
+                    },
+                }
+            }
+        },
+        "components": {"schemas": {}},
+    }
+
+
+@override_settings(
+    ROOT_URLCONF=__name__,
+    API_DECORATOR_SERVERS={
+        "servers": [
+            {"url": "https://api.example.com/v1", "description": "Example server"},
+            {"url": "/api/v2"},
+        ]
+    },
+)
+def test_openapi_spec_with_servers_with_url_and_description(client: Client) -> None:
+    @api(method="GET")
+    def view(
+        request: HttpRequest,
+    ) -> None:
+        return None
+
+    urls = [
+        path("view", view, name="view"),
+    ]
+
+    assert generate_api_spec(urls) == {
+        "openapi": "3.1.0",
+        "info": {"title": "API overview", "version": "0.0.1"},
+        "servers": [
+            {"url": "https://api.example.com/v1", "description": "Example server"},
+            {"url": "/api/v2", "description": None},
+        ],
+        "paths": {
+            "/view": {
+                "get": {
+                    "operationId": "view",
+                    "description": "",
+                    "tags": ["test_openapi"],
+                    "x-reverse-path": "view",
+                    "parameters": [],
+                    "responses": {
+                        200: {
+                            "description": "",
+                            "content": {
+                                "application/json": {"schema": {"type": "null"}}
+                            },
+                        }
+                    },
+                }
+            }
+        },
+        "components": {"schemas": {}},
+    }
+
+
+@override_settings(
+    ROOT_URLCONF=__name__,
+)
+def test_openapi_spec_without_servers(client: Client) -> None:
+    @api(method="GET")
+    def view(
+        request: HttpRequest,
+    ) -> None:
+        return None
+
+    urls = [
+        path("view", view, name="view"),
+    ]
+
+    assert generate_api_spec(urls) == {
+        "openapi": "3.1.0",
+        "info": {"title": "API overview", "version": "0.0.1"},
+        "paths": {
+            "/view": {
+                "get": {
+                    "operationId": "view",
+                    "description": "",
+                    "tags": ["test_openapi"],
+                    "x-reverse-path": "view",
+                    "parameters": [],
+                    "responses": {
+                        200: {
+                            "description": "",
+                            "content": {
+                                "application/json": {"schema": {"type": "null"}}
+                            },
+                        }
+                    },
+                }
+            }
+        },
+        "components": {"schemas": {}},
+    }

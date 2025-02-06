@@ -12,7 +12,7 @@ from django.http import HttpResponse
 from django.urls.resolvers import RoutePattern, URLPattern, URLResolver
 from pydantic_core import PydanticUndefined
 
-from .types import ApiMeta
+from .types import ApiMeta, OpenApiServer
 
 logger = logging.getLogger(__name__)
 
@@ -338,12 +338,25 @@ def generate_api_spec(
             else:
                 api_paths[path] = val
 
-    api_spec = {
+    api_spec: dict[str, Any] = {
         "openapi": "3.1.0",
         "info": {"title": "API overview", "version": "0.0.1"},
         "paths": api_paths,
         "components": {"schemas": api_components},
     }
+
+    # Attempt to add servers to the api spec if the setting is set
+    if servers := getattr(settings, "API_DECORATOR_SERVERS", {}).get("servers", []):
+        try:
+            open_api_servers = [
+                OpenApiServer.model_validate(server) for server in servers
+            ]
+        except Exception as e:
+            raise ImproperlyConfigured(
+                "Servers must be a list of OpenApiServer objects"
+            ) from e
+
+        api_spec["servers"] = [server.model_dump() for server in open_api_servers]
 
     logger.info(
         "Generated %s paths and %s schemas", len(api_paths), len(api_components)
