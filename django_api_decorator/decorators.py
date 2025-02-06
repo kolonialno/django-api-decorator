@@ -3,7 +3,7 @@ import inspect
 import logging
 import typing
 from collections.abc import Callable, Mapping
-from typing import Annotated, Any, TypedDict
+from typing import Annotated, Any, TypedDict, get_origin, get_args
 
 import pydantic
 from django.conf import settings
@@ -15,7 +15,7 @@ from pydantic.fields import FieldInfo
 from pydantic.functional_validators import BeforeValidator
 from pydantic_core import PydanticUndefined
 
-from .types import ApiMeta, FieldError, PublicAPIError
+from .types import ApiMeta, FieldError, PublicAPIError, _QueryType
 from .utils import get_list_fields, parse_form_encoded_body
 
 P = typing.ParamSpec("P")
@@ -252,9 +252,21 @@ def _get_query_params_model(
     if any(arg_name not in parameters for arg_name in query_params):
         raise TypeError("All parameters specified in query_params must exist")
 
+    field_names = query_params.copy()
+
+    # Find parameters annotated using `Query[<type>]` types instead of being
+    # specified in the query_params argument to the decorator
+    field_names += [
+        arg_name
+        for arg_name, parameter in parameters.items()
+        if get_origin(parameter.annotation) is Annotated
+        and _QueryType in get_args(parameter.annotation)
+        and arg_name not in query_params
+    ]
+
     fields: dict[str, tuple[Any, FieldInfo]] = {}
 
-    for arg_name in query_params:
+    for arg_name in field_names:
         annotation = parameters[arg_name].annotation
         annotation = TYPE_MAPPING.get(annotation, annotation)
         field = pydantic.fields.Field(
