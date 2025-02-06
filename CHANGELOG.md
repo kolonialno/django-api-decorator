@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.8.0](https://github.com/kolonialno/django-api-decorator/compare/v0.7.0...v0.8.0) (2025-02-06)
+
+
+### Features
+
+* Add possibility to add "servers" key to schema via settings ([#38](https://github.com/kolonialno/django-api-decorator/issues/38)) ([51f8f45](https://github.com/kolonialno/django-api-decorator/commit/51f8f45d78d7b032f611232f8b1edf31c0630c5e))
+
 ## [0.7.0](https://github.com/kolonialno/django-api-decorator/compare/v0.6.0...v0.7.0) (2025-02-03)
 
 
