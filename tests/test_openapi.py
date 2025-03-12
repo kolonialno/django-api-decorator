@@ -8,7 +8,7 @@ from django.test.client import Client
 from django.test.utils import override_settings
 from django.urls import URLPattern, URLResolver, path
 from django.urls.resolvers import RoutePattern
-from pydantic import BaseModel
+from pydantic import BaseModel, computed_field
 
 from django_api_decorator.decorators import api
 from django_api_decorator.openapi import generate_api_spec, get_resolved_url_patterns
@@ -639,3 +639,32 @@ def test_openapi_spec_without_servers(client: Client) -> None:
         },
         "components": {"schemas": {}},
     }
+
+
+@override_settings(
+    ROOT_URLCONF=__name__,
+    API_DECORATOR_SERVERS={"servers": [{"url": "https://api.example.com"}]},
+)
+def test_openapi_spec_computed_fields(client: Client) -> None:
+    class A(BaseModel):
+        first_name: str
+        last_name: str
+
+        @computed_field
+        @property
+        def full_name(self) -> str:
+            return f"{self.first_name} {self.last_name}"
+
+    @api(method="GET")
+    def view(request: HttpRequest) -> A:
+        return A(first_name="John", last_name="Doe")
+
+    urls = [
+        path("view", view, name="view"),
+    ]
+
+    # Make sure computed fields are included in the schema.
+    assert (
+        "full_name"
+        in generate_api_spec(urls)["components"]["schemas"]["A"]["properties"]
+    )

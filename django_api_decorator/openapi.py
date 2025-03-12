@@ -131,7 +131,9 @@ def paths_and_types_for_view(
 
     if api_meta.response_adapter:
         response_schema = api_meta.response_adapter.json_schema(
-            ref_template=schema_ref, by_alias=generate_schema_by_alias
+            ref_template=schema_ref,
+            by_alias=generate_schema_by_alias,
+            mode="serialization",
         )
         if defs := response_schema.pop("$defs", None):
             components.update(defs)
@@ -143,7 +145,9 @@ def paths_and_types_for_view(
     request_body = {}
     if api_meta.body_adapter:
         body_schema = api_meta.body_adapter.json_schema(
-            ref_template=schema_ref, by_alias=generate_schema_by_alias
+            ref_template=schema_ref,
+            by_alias=generate_schema_by_alias,
+            mode="serialization",
         )
         if defs := body_schema.pop("$defs", None):
             components.update(defs)
@@ -161,7 +165,9 @@ def paths_and_types_for_view(
 
     for name, field in api_meta.query_params_model.model_fields.items():
         schema = pydantic.TypeAdapter(field.annotation).json_schema(
-            ref_template=schema_ref, by_alias=generate_schema_by_alias
+            ref_template=schema_ref,
+            by_alias=generate_schema_by_alias,
+            mode="serialization",
         )
         schema = to_ref_if_object(schema)
         if field.default != PydanticUndefined:
