@@ -147,7 +147,7 @@ def paths_and_types_for_view(
         body_schema = api_meta.body_adapter.json_schema(
             ref_template=schema_ref,
             by_alias=generate_schema_by_alias,
-            mode="serialization",
+            mode="validation",
         )
         if defs := body_schema.pop("$defs", None):
             components.update(defs)
@@ -167,7 +167,7 @@ def paths_and_types_for_view(
         schema = pydantic.TypeAdapter(field.annotation).json_schema(
             ref_template=schema_ref,
             by_alias=generate_schema_by_alias,
-            mode="serialization",
+            mode="validation",
         )
         schema = to_ref_if_object(schema)
         if field.default != PydanticUndefined:

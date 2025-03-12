@@ -645,7 +645,7 @@ def test_openapi_spec_without_servers(client: Client) -> None:
     ROOT_URLCONF=__name__,
     API_DECORATOR_SERVERS={"servers": [{"url": "https://api.example.com"}]},
 )
-def test_openapi_spec_computed_fields(client: Client) -> None:
+def test_openapi_spec_computed_fields__response(client: Client) -> None:
     class A(BaseModel):
         first_name: str
         last_name: str
@@ -667,4 +667,33 @@ def test_openapi_spec_computed_fields(client: Client) -> None:
     assert (
         "full_name"
         in generate_api_spec(urls)["components"]["schemas"]["A"]["properties"]
+    )
+
+
+@override_settings(
+    ROOT_URLCONF=__name__,
+    API_DECORATOR_SERVERS={"servers": [{"url": "https://api.example.com"}]},
+)
+def test_openapi_spec_computed_fields__body(client: Client) -> None:
+    class A(BaseModel):
+        first_name: str
+        last_name: str
+
+        @computed_field
+        @property
+        def full_name(self) -> str:
+            return f"{self.first_name} {self.last_name}"
+
+    @api(method="GET")
+    def view(request: HttpRequest, body: A) -> None:
+        return None
+
+    urls = [
+        path("view", view, name="view"),
+    ]
+
+    # Computed fields should not be included in the request schema.
+    assert (
+        "full_name"
+        not in generate_api_spec(urls)["components"]["schemas"]["A"]["properties"]
     )
