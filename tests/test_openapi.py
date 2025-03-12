@@ -650,7 +650,7 @@ def test_openapi_spec_computed_fields__response(client: Client) -> None:
         first_name: str
         last_name: str
 
-        @computed_field
+        @computed_field  # type: ignore[misc]
         @property
         def full_name(self) -> str:
             return f"{self.first_name} {self.last_name}"
@@ -679,7 +679,7 @@ def test_openapi_spec_computed_fields__body(client: Client) -> None:
         first_name: str
         last_name: str
 
-        @computed_field
+        @computed_field  # type: ignore[misc]
         @property
         def full_name(self) -> str:
             return f"{self.first_name} {self.last_name}"
