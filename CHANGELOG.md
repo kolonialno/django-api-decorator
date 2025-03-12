@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.9.0](https://github.com/kolonialno/django-api-decorator/compare/v0.8.0...v0.9.0) (2025-03-12)
+
+
+### Features
+
+* use serialization mode when dumping response schemas ([#41](https://github.com/kolonialno/django-api-decorator/issues/41)) ([1711b32](https://github.com/kolonialno/django-api-decorator/commit/1711b32ea79dedacaaadd345039799c8a87d74d2))
+
 ## [0.8.0](https://github.com/kolonialno/django-api-decorator/compare/v0.7.0...v0.8.0) (2025-02-06)
 
 
