@@ -1,17 +1,9 @@
 import functools
-from typing import (
-    Any,
-    Callable,
-    Generic,
-    Protocol,
-    Type,
-    TypeAlias,
-    TypedDict,
-    TypeVar,
-)
+from typing import Any, Callable, Generic, Protocol, Type, TypeAlias, TypedDict, TypeVar
+
+from typing_extensions import Unpack
 
 from django_api_decorator.types import PublicAPIError
-from typing_extensions import Unpack
 
 E = TypeVar("E", bound=Exception)
 
@@ -46,8 +38,8 @@ class CallbackHandlerKwarg(TypedDict, Generic[E]):
     callback: Callback[E]
 
 
-Options: TypeAlias = Unpack[NormalHandlerKwarg] | Unpack[CallbackHandlerKwarg]  # type: ignore
-Args: TypeAlias = Unpack[tuple[Message, int | None]] | Unpack[tuple[Callback]]  # type: ignore
+Options: TypeAlias = Unpack[NormalHandlerKwarg] | Unpack[CallbackHandlerKwarg]  # type: ignore # noqa: E501
+Args: TypeAlias = Unpack[tuple[Message, int | None]] | Unpack[tuple[Callback]]  # type: ignore # noqa: E501
 
 _ExceptionHandlerMessage: TypeAlias = tuple[Type[Exception], Message]
 _ExceptionHandlerStatus: TypeAlias = tuple[Type[Exception], int]

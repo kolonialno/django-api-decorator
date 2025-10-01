@@ -1,10 +1,10 @@
 import pytest
-from django_api_decorator.types import PublicAPIError
 
 from django_api_decorator.exception_handler import (
     create_exception_handler,
     create_exception_handlers,
 )
+from django_api_decorator.types import PublicAPIError
 
 
 class CustomException(Exception):
