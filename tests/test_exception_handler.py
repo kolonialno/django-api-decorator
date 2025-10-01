@@ -5,6 +5,7 @@ from django_api_decorator.exception_handler import (
     create_exception_handlers,
 )
 from django_api_decorator.types import PublicAPIError
+from django.utils.translation import gettext_lazy as _
 
 
 class CustomException(Exception):
@@ -172,3 +173,27 @@ def test_create_exception_handlers() -> None:
 
     assert exc_info4.value.status_code == 400
     assert exc_info4.value.message == ["Default exception message"]
+
+
+def test_create_exception_handlers__localization() -> None:
+    """
+    Test that the exception handler decorator is able to handle a gettext translation.
+    """
+
+    @create_exception_handler(CustomException, message=_("Some localized message"))
+    def test_func1() -> None:
+        raise CustomException(message="A testing exception")
+
+    with pytest.raises(PublicAPIError) as exc_info1:
+        test_func1()
+
+    assert exc_info1.value.message == ["Some localized message"]
+
+    @create_exception_handlers([(CustomException, _("Another localized message"))])
+    def test_func2() -> None:
+        raise CustomException(message="A testing exception")
+
+    with pytest.raises(PublicAPIError) as exc_info2:
+        test_func2()
+
+    assert exc_info2.value.message == ["Another localized message"]

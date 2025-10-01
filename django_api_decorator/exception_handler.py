@@ -158,7 +158,7 @@ def create_exception_handlers(
                     arg = handler[1]
 
                     # _ExceptionHandlerMessage
-                    if isinstance(arg, str):
+                    if isinstance(arg, str) or hasattr(arg, "__str__"):
                         _exc, message = handler  # type: ignore
 
                     # _ExceptionHandlerStatus
@@ -168,8 +168,7 @@ def create_exception_handlers(
                     # _ExceptionHandlerCallback
                     elif callable(arg):
                         _exc, callback = handler  # type:ignore
-                        if callable(callback):
-                            raise callback(e) from e  # type: ignore
+                        raise callback(e) from e  # type: ignore
 
                 # _ExceptionHandlerMessageStatus
                 elif len(handler) == 3:
