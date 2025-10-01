@@ -1,11 +1,11 @@
 import pytest
+from django.utils.translation import gettext_lazy as _
 
 from django_api_decorator.exception_handler import (
     create_exception_handler,
     create_exception_handlers,
 )
 from django_api_decorator.types import PublicAPIError
-from django.utils.translation import gettext_lazy as _
 
 
 class CustomException(Exception):
@@ -189,7 +189,7 @@ def test_create_exception_handlers__localization() -> None:
 
     assert exc_info1.value.message == ["Some localized message"]
 
-    @create_exception_handlers([(CustomException, _("Another localized message"))])
+    @create_exception_handlers(((CustomException, _("Another localized message")),))
     def test_func2() -> None:
         raise CustomException(message="A testing exception")
 

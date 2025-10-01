@@ -1,6 +1,7 @@
 import functools
 from typing import Any, Callable, Generic, Protocol, Type, TypeAlias, TypedDict, TypeVar
 
+from django_stubs_ext import StrOrPromise
 from typing_extensions import Unpack
 
 from django_api_decorator.types import PublicAPIError
@@ -25,7 +26,7 @@ class APIErrorArgs(TypedDict):
     errors: dict[str, Any] | None
 
 
-Message = str | dict[str, Any] | None
+Message = str | dict[str, Any] | None | StrOrPromise
 Callback = Callable[[E], Exception]
 
 
