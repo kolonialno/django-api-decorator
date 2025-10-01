@@ -1,7 +1,7 @@
 import functools
 from typing import Any, Callable, Generic, Protocol, Type, TypeAlias, TypedDict, TypeVar
 
-from django_stubs_ext import StrOrPromise
+from django.utils.functional import Promise
 from typing_extensions import Unpack
 
 from django_api_decorator.types import PublicAPIError
@@ -26,7 +26,7 @@ class APIErrorArgs(TypedDict):
     errors: dict[str, Any] | None
 
 
-Message = str | dict[str, Any] | None | StrOrPromise
+Message = str | dict[str, Any] | None | Promise
 Callback = Callable[[E], Exception]
 
 
@@ -159,7 +159,7 @@ def create_exception_handlers(
                     arg = handler[1]
 
                     # _ExceptionHandlerMessage
-                    if isinstance(arg, str) or hasattr(arg, "__str__"):
+                    if isinstance(arg, (str, Promise)):
                         _exc, message = handler  # type: ignore
 
                     # _ExceptionHandlerStatus
