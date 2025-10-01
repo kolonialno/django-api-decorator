@@ -34,7 +34,9 @@ class CustomException(Exception):
         ),
     ),
 )
-def test_create_exception_handler_args(message, expected):
+def test_create_exception_handler_args(
+    message: str | None | dict[str, str], expected: list[str] | dict[str, str]
+) -> None:
     """
     Test that the exception handler decorator is able to catch provided exception
     and return a PublicAPIError instead with provided message when provided with args
@@ -42,7 +44,7 @@ def test_create_exception_handler_args(message, expected):
     """
 
     @create_exception_handler(CustomException, message, 401)
-    def test_func():
+    def test_func() -> None:
         raise CustomException(message="A testing exception")
 
     with pytest.raises(PublicAPIError) as exc_info:
@@ -68,7 +70,9 @@ def test_create_exception_handler_args(message, expected):
         ),
     ),
 )
-def test_create_exception_handler_kwargs(message, expected):
+def test_create_exception_handler_kwargs(
+    message: str | None | dict[str, str], expected: list[str] | dict[str, str]
+) -> None:
     """
     Test that the exception handler decorator is able to catch provided exception
     and return a PublicAPIError instead with provided message when provided with
@@ -76,7 +80,7 @@ def test_create_exception_handler_kwargs(message, expected):
     """
 
     @create_exception_handler(CustomException, message=message, status_code=401)
-    def test_func():
+    def test_func() -> None:
         raise CustomException(message="A testing exception")
 
     with pytest.raises(PublicAPIError) as exc_info:
@@ -86,18 +90,18 @@ def test_create_exception_handler_kwargs(message, expected):
     assert exc_info.value.message == expected
 
 
-def test_create_exception_handler_with_callback():
+def test_create_exception_handler_with_callback() -> None:
     """
     Test that the exception handler decorator is able to catch provided exception
     and run callback.
     """
 
-    def callback_func(exc: CustomException):
+    def callback_func(exc: CustomException) -> PublicAPIError:
         message = {"error": str(exc), "info": exc.additional_info}
         return PublicAPIError(status_code=500, errors=message)
 
     @create_exception_handler(CustomException, callback=callback_func)
-    def test_func():
+    def test_func() -> None:
         raise CustomException(
             message="A testing exception", additional_info="Some additional info"
         )
@@ -112,8 +116,8 @@ def test_create_exception_handler_with_callback():
     }
 
 
-def test_create_exception_handlers():
-    def callback_func1(exc: CustomException):
+def test_create_exception_handlers() -> None:
+    def callback_func1(exc: CustomException) -> PublicAPIError:
         message = {"error": str(exc), "info": exc.additional_info}
         return PublicAPIError(status_code=500, errors=message)
 
@@ -125,7 +129,7 @@ def test_create_exception_handlers():
     )
 
     @create_exception_handlers(handlers)
-    def test_func1():
+    def test_func1() -> None:
         raise CustomException(
             message="A testing exception", additional_info="Some additional info"
         )
@@ -140,7 +144,7 @@ def test_create_exception_handlers():
     }
 
     @create_exception_handlers(handlers)
-    def test_func2():
+    def test_func2() -> None:
         raise TypeError("A testing exception")
 
     with pytest.raises(PublicAPIError) as exc_info2:
@@ -150,7 +154,7 @@ def test_create_exception_handlers():
     assert exc_info2.value.message == ["Custom error message"]
 
     @create_exception_handlers(handlers)
-    def test_func3():
+    def test_func3() -> None:
         raise ValueError("Some value error")
 
     with pytest.raises(PublicAPIError) as exc_info3:
@@ -160,7 +164,7 @@ def test_create_exception_handlers():
     assert exc_info3.value.message == ["A value error"]
 
     @create_exception_handlers(handlers)
-    def test_func4():
+    def test_func4() -> None:
         raise RuntimeError("Default exception message")
 
     with pytest.raises(PublicAPIError) as exc_info4:

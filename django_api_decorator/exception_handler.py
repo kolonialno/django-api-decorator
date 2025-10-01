@@ -166,8 +166,8 @@ def create_exception_handlers(
                         _exc, status_code = handler  # type: ignore
 
                     # _ExceptionHandlerCallback
-                    elif isinstance(arg, Callable):  # type:ignore
-                        _exc, callback = handler
+                    elif callable(arg):
+                        _exc, callback = handler  # type:ignore
                         if callable(callback):
                             raise callback(e) from e  # type: ignore
 
