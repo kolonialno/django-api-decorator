@@ -719,7 +719,7 @@ def test_openapi_spec_path__defaults(
     def view(request: HttpRequest) -> A:
         return A(name="John")
 
-    urls = [path(f"view/<{type_}:id>", view, name="view")]
+    urls = [path(f"view/<{type_}:id>", view, name="view")]  # noqa
     spec = generate_api_spec(urls)
 
     parameter_spec = spec["paths"]["/view/{id}"]["get"]["parameters"][0]["schema"]
