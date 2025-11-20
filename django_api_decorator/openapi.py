@@ -9,10 +9,9 @@ import pydantic
 from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured
 from django.http import HttpResponse
-from django.urls.converters import REGISTERED_CONVERTERS, get_converters
+from django.urls.converters import REGISTERED_CONVERTERS
 from django.urls.resolvers import RoutePattern, URLPattern, URLResolver
 from pydantic_core import PydanticUndefined
-from typing_extensions import Literal
 
 from .types import ApiMeta, OpenApiServer
 
@@ -87,7 +86,7 @@ def _get_converter_schema(converter: BaseConverter | None) -> dict[str, Any] | N
     type_hints = get_type_hints(converter.to_python, include_extras=True)
     return_type = type_hints.get("return")
 
-    if return_type is not None and return_type is not type(None):
+    if return_type is not None:
         # Use Pydantic to generate schema from the return type
         schema = pydantic.TypeAdapter(return_type).json_schema()
         return schema
