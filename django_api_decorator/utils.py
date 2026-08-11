@@ -28,6 +28,11 @@ def method_router(
             name="url-name",
         )
     ```
+
+    The returned view is exempt from ``ATOMIC_REQUESTS`` for the database aliases
+    that *all* the given views are exempt from, as the router is a single view for
+    all the methods. Views decorated with ``@api`` are always exempt, because they
+    open the transaction themselves when ``atomic`` is set.
     """
 
     if csrf_exempt is None:
@@ -56,6 +61,17 @@ def method_router(
         return view(request, *args, **kwargs)
 
     call_view.csrf_exempt = csrf_exempt  # type: ignore[attr-defined]
+
+    # Django looks for _non_atomic_requests on the resolved view to decide if it
+    # should skip the ATOMIC_REQUESTS transaction. call_view is a new function, so
+    # without this the marker on the wrapped views is lost and their requests are
+    # run in a transaction after all.
+    non_atomic_requests: list[set[str]] = [
+        set(getattr(view, "_non_atomic_requests", set())) for view in views.values()
+    ]
+    call_view._non_atomic_requests = (  # type: ignore[attr-defined]
+        set.intersection(*non_atomic_requests) if non_atomic_requests else set()
+    )
 
     call_view._method_router_views = views  # type: ignore[attr-defined]
 
