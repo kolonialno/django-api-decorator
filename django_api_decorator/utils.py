@@ -1,10 +1,8 @@
 from types import UnionType
-from typing import Any, Callable, List, ParamSpec, Set, Tuple, Union, cast, get_origin
+from typing import Any, Callable, List, Set, Tuple, Union, cast, get_origin
 
 from django.http import HttpRequest, HttpResponse, HttpResponseNotAllowed
 from pydantic import BaseModel
-
-P = ParamSpec("P")
 
 
 def method_router(
@@ -49,16 +47,17 @@ def method_router(
             )
         csrf_exempt = all(csrf_exempt_values)
 
-    def invalid_method(
-        request: HttpRequest, *args: P.args, **kwargs: P.kwargs
-    ) -> HttpResponse:
+    def invalid_method(request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:
         return HttpResponseNotAllowed(views.keys())
 
-    def call_view(
-        request: HttpRequest, *args: P.args, **kwargs: P.kwargs
-    ) -> HttpResponse:
+    def call_view(request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:
         view = views.get(cast(str, request.method), invalid_method)
-        return view(request, *args, **kwargs)
+        # The views are Callable[..., HttpResponse], so mypy treats forwarding
+        # *args/**kwargs to them as an untyped call returning Any.
+        response: HttpResponse = view(  # type: ignore[no-untyped-call]
+            request, *args, **kwargs
+        )
+        return response
 
     call_view.csrf_exempt = csrf_exempt  # type: ignore[attr-defined]
 
