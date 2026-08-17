@@ -9,9 +9,8 @@ jobs:
     strategy:
       matrix:
         check:
-          - isort --check .
-          - black --check .
-          - flake8 .
+          - ruff check .
+          - ruff format --check .
           - mypy .
         python_version: ["3.11", "3.12"]
 

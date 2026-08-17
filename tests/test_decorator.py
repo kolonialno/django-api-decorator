@@ -317,8 +317,7 @@ def test_parsing_form_encoded(client: Client, mocker: MockerFixture) -> None:
     assert response.status_code == 400
     assert response.json() == {
         "errors": [
-            "num: Input should be a valid integer, "
-            "unable to parse string as an integer"
+            "num: Input should be a valid integer, unable to parse string as an integer"
         ],
         "field_errors": {
             "num": {
