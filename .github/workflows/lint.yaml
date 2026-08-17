@@ -19,26 +19,14 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v7
 
-      - name: Cache Poetry
-        uses: actions/cache@v6
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v10.0.1
         with:
-          path: .venv
-          key: ${{ runner.os }}-${{ matrix.python_version }}-poetry-${{ hashFiles('poetry.lock') }}
-
-      - name: Set up Python
-        uses: actions/setup-python@v7
-        with:
+          enable-cache: true
           python-version: ${{ matrix.python_version }}
 
-      - name: Set up Poetry
-        uses: snok/install-poetry@v1.3
-        with:
-          virtualenvs-in-project: true
-
       - name: Install dependencies
-        run: |
-          poetry install
+        run: uv sync --locked
 
       - name: Run linter
-        run: |
-          poetry run ${{ matrix.check }}
+        run: uv run ${{ matrix.check }}
