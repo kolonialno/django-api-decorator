@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.0.1](https://github.com/kolonialno/django-api-decorator/compare/v1.0.0...v1.0.1) (2026-08-25)
+
+
+### Bug Fixes
+
+* Bump pytest from 7.4.4 to 9.0.3 ([452ed67](https://github.com/kolonialno/django-api-decorator/commit/452ed67019b19e79141b6bd50d4a1e4811adf964))
+
 ## [1.0.0](https://github.com/kolonialno/django-api-decorator/compare/v0.9.0...v1.0.0) (2026-08-25)
 
 
