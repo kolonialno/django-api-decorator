@@ -20,13 +20,23 @@ jobs:
       - uses: googleapis/release-please-action@v5
         id: release
         with:
-          # When you use the repository's GITHUB_TOKEN to perform tasks, events such as 'on.release'
-          # use in the Upload artifacts workflow wont be triggered.
-          # This prevents you from accidentally creating recursive workflow runs.
-          # We needed to use either a PAT og a GitHub App.
-          # https://docs.github.com/en/actions/using-workflows/triggering-a-workflow#triggering-a-workflow-from-a-workflow
-          #
-          # Note: torarvid decided to still use GITHUB_TOKEN for a while to see this with his own eyes.
           token: ${{ secrets.GITHUB_TOKEN }}
           config-file: release-please-config.json
           manifest-file: .release-please-manifest.json
+
+      - name: Set up uv
+        if: ${{ steps.release.outputs.release_created == 'true' }}
+        uses: astral-sh/setup-uv@v10.0.1
+        with:
+          enable-cache: true
+          python-version: "3.11"
+
+      - name: Build
+        if: ${{ steps.release.outputs.release_created == 'true' }}
+        run: uv build
+
+      - name: Publish
+        if: ${{ steps.release.outputs.release_created == 'true' }}
+        run: uv publish
+        env:
+          UV_PUBLISH_TOKEN: ${{ secrets.PYPI_TOKEN }}
