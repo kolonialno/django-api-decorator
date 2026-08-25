@@ -1,5 +1,26 @@
 # Changelog
 
+## [1.0.0](https://github.com/kolonialno/django-api-decorator/compare/v0.9.0...v1.0.0) (2026-08-25)
+
+
+### ⚠ BREAKING CHANGES
+
+* Django 5 is now required
+
+### Features
+
+* drop support for eol'd Django 4 ([b293418](https://github.com/kolonialno/django-api-decorator/commit/b29341847767f99d3bd066af8c3176cf2b4f22ee))
+
+
+### Bug Fixes
+
+* keep non-atomic exemption in method_router ([b00215e](https://github.com/kolonialno/django-api-decorator/commit/b00215e87b0581a82bcc5bb0caba143ef2a42966))
+
+
+### Documentation
+
+* use uv install command in README ([72489dd](https://github.com/kolonialno/django-api-decorator/commit/72489dd6315e84c27432614eff48ac5b0a422f4a))
+
 ## [0.9.0](https://github.com/kolonialno/django-api-decorator/compare/v0.8.0...v0.9.0) (2025-03-12)
 
 
