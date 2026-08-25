@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.0.2](https://github.com/kolonialno/django-api-decorator/compare/v1.0.1...v1.0.2) (2026-08-25)
+
+
+### Bug Fixes
+
+* release with release-please action ([9842931](https://github.com/kolonialno/django-api-decorator/commit/98429316310dcdeab78b675b472a4432f7b5043f))
+
 ## [1.0.1](https://github.com/kolonialno/django-api-decorator/compare/v1.0.0...v1.0.1) (2026-08-25)
 
 
