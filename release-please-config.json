@@ -7,7 +7,14 @@
       "bump-patch-for-minor-pre-major": false,
       "draft": false,
       "prerelease": false,
-      "bootstrap-sha": "64e9b686a9941e84b9781c74806f0c98096a8ae1"
+      "bootstrap-sha": "64e9b686a9941e84b9781c74806f0c98096a8ae1",
+      "extra-files": [
+        {
+          "type": "toml",
+          "path": "uv.lock",
+          "jsonpath": "$.package[?(@.name.value == \"django-api-decorator\")].version"
+        }
+      ]
     }
   },
   "$schema": "https://raw.githubusercontent.com/googleapis/release-please/main/schemas/config.json"
