@@ -25,6 +25,8 @@ jobs:
           # This prevents you from accidentally creating recursive workflow runs.
           # We needed to use either a PAT og a GitHub App.
           # https://docs.github.com/en/actions/using-workflows/triggering-a-workflow#triggering-a-workflow-from-a-workflow
-          token: ${{ secrets.GH_ACCESS_TOKEN }}
+          #
+          # Note: torarvid decided to still use GITHUB_TOKEN for a while to see this with his own eyes.
+          token: ${{ secrets.GITHUB_TOKEN }}
           config-file: release-please-config.json
           manifest-file: .release-please-manifest.json
