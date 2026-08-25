@@ -8,14 +8,11 @@ license-files = ["LICENSE"]
 readme = "README.md"
 requires-python = ">=3.11"
 classifiers = [
-    "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.11",
-    "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
 ]
-dependencies = [
-    "Django>=4.2.16",
-    "pydantic>=2.0,<3.0",
-]
+dependencies = ["Django>=5.2", "pydantic>=2.0,<3.0"]
 
 [project.urls]
 Homepage = "https://github.com/kolonialno/django-api-decorator"
@@ -23,12 +20,12 @@ Repository = "https://github.com/kolonialno/django-api-decorator"
 
 [dependency-groups]
 dev = [
-    "pytest>=7.4.0,<8.0",
-    "pytest-django>=4.5.2,<5.0",
-    "mypy>=1.20.0,<2.0",
-    "django-stubs>=5.2.0,<6.0",
-    "pytest-mock>=3.11.1,<4.0",
-    "ruff>=0.14.0,<0.15",
+  "pytest>=7.4.0,<8.0",
+  "pytest-django>=4.5.2,<5.0",
+  "mypy>=1.20.0,<2.0",
+  "django-stubs>=5.2.0,<6.0",
+  "pytest-mock>=3.11.1,<4.0",
+  "ruff>=0.14.0,<0.15",
 ]
 
 [tool.ruff]
