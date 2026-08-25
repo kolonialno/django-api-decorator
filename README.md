@@ -14,7 +14,11 @@
 Django API Decorator can be installed from
 [PyPI](https://pypi.org/project/django-api-decorator):
 
-`pip install django-api-decorator`
+```console
+uv add django-api-decorator
+```
+
+Or, without uv: `pip install django-api-decorator`
 
 
 ## Usage

@@ -1,37 +1,43 @@
-[tool.poetry]
+[project]
 name = "django-api-decorator"
 version = "0.9.0"
 description = "A collection of tools to build function based Django APIs"
-authors = ["Oda <tech@oda.com>"]
+authors = [{ name = "Oda", email = "tech@oda.com" }]
 license = "MIT"
+license-files = ["LICENSE"]
 readme = "README.md"
-homepage = "https://github.com/kolonialno/django-api-decorator"
-repository = "https://github.com/kolonialno/django-api-decorator"
-packages = [{include = "django_api_decorator"}]
+requires-python = ">=3.11"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+]
+dependencies = [
+    "Django>=4.2.16",
+    "pydantic>=2.0,<3.0",
+]
 
-[tool.poetry.dependencies]
-python = "^3.11"
-Django = ">=4.2.16"
-pydantic = "^2.0"
+[project.urls]
+Homepage = "https://github.com/kolonialno/django-api-decorator"
+Repository = "https://github.com/kolonialno/django-api-decorator"
 
+[dependency-groups]
+dev = [
+    "pytest>=7.4.0,<8.0",
+    "pytest-django>=4.5.2,<5.0",
+    "mypy>=1.20.0,<2.0",
+    "django-stubs>=5.2.0,<6.0",
+    "pytest-mock>=3.11.1,<4.0",
+    "ruff>=0.14.0,<0.15",
+]
 
-[tool.poetry.group.dev.dependencies]
-pytest = "^7.4.0"
-black = ">=23.3,<25.0"
-isort = "^5.12.0"
-flake8 = "^6.0.0"
-pytest-django = "^4.5.2"
-flake8-black = "^0.3.6"
-mypy = "^1.4.1"
-django-stubs = "^4.2.3"
-pytest-mock = "^3.11.1"
-
-[tool.isort]
-profile = "black"
-
-[tool.black]
-target-version = ["py310"]
+[tool.ruff]
 line-length = 88
+target-version = "py311"
+extend-exclude = [".venv"]
+
+[tool.ruff.lint]
+extend-select = ["I"]
 
 [tool.mypy]
 strict = true
@@ -41,8 +47,12 @@ plugins = ["mypy_django_plugin.main"]
 django_settings_module = "tests.django_settings"
 
 [build-system]
-requires = ["poetry-core"]
-build-backend = "poetry.core.masonry.api"
+requires = ["uv_build>=0.12.3,<0.13"]
+build-backend = "uv_build"
+
+[tool.uv.build-backend]
+module-name = "django_api_decorator"
+module-root = ""
 
 [tool.pytest.ini_options]
 DJANGO_SETTINGS_MODULE = "tests.django_settings"

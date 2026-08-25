@@ -257,7 +257,7 @@ def _get_query_params_model(
     for arg_name in query_params:
         annotation = parameters[arg_name].annotation
         annotation = TYPE_MAPPING.get(annotation, annotation)
-        field = pydantic.fields.Field(
+        field: FieldInfo = pydantic.fields.Field(  # type: ignore[assignment]
             default=(
                 parameters[arg_name].default
                 if not parameters[arg_name].default == inspect.Parameter.empty
