@@ -1,14 +1,16 @@
 import datetime
 from enum import Enum
+from typing import Any
 
 import pytest
 from django.core.exceptions import ImproperlyConfigured
 from django.http import HttpRequest
 from django.test.client import Client
 from django.test.utils import override_settings
-from django.urls import URLPattern, URLResolver, path
+from django.urls import URLPattern, URLResolver, path, register_converter
 from django.urls.resolvers import RoutePattern
 from pydantic import BaseModel, computed_field
+from typing_extensions import Literal
 
 from django_api_decorator.decorators import api
 from django_api_decorator.openapi import generate_api_spec, get_resolved_url_patterns
@@ -697,3 +699,60 @@ def test_openapi_spec_computed_fields__body(client: Client) -> None:
         "full_name"
         not in generate_api_spec(urls)["components"]["schemas"]["A"]["properties"]
     )
+
+
+@pytest.mark.parametrize(
+    "type_, expected_parameter_spec",
+    [
+        ("int", {"type": "integer"}),
+        ("str", {"type": "string"}),
+        ("slug", {"type": "string"}),
+    ],
+)
+def test_openapi_spec_path__defaults(
+    client: Client, type_: str, expected_parameter_spec: dict[str, Any]
+) -> None:
+    class A(BaseModel):
+        name: str
+
+    @api(method="GET")
+    def view(request: HttpRequest) -> A:
+        return A(name="John")
+
+    urls = [path(f"view/<{type_}:id>", view, name="view")]  # noqa
+    spec = generate_api_spec(urls)
+
+    parameter_spec = spec["paths"]["/view/{id}"]["get"]["parameters"][0]["schema"]
+    print(parameter_spec)
+    assert parameter_spec == expected_parameter_spec
+
+
+def test_openapi_spec_path__custom_converter(client: Client) -> None:
+    class A(BaseModel):
+        name: str
+
+    @api(method="GET")
+    def view(request: HttpRequest) -> A:
+        return A(name="John")
+
+    class CustomConverter:
+        regex = r"[0-9]+|custom-id"
+
+        def to_python(self, value: str) -> int | Literal["custom-id"]:
+            if value.isdigit():
+                return int(value)
+            return "custom-id"
+
+        def to_url(self, value: int | Literal["custom-id"]) -> str:
+            if value == "custom-id":
+                return "custom-id"
+            return str(value)
+
+    register_converter(CustomConverter, "custom")
+    urls = [
+        path("view/<custom:id>", view, name="view"),
+    ]
+    spec = generate_api_spec(urls)
+
+    parameter_spec = spec["paths"]["/view/{id}"]["get"]["parameters"][0]["schema"]
+    assert parameter_spec == {"anyOf": [{"type": "integer"}, {"const": "custom-id"}]}

@@ -3,12 +3,13 @@ import logging
 import re
 import textwrap
 from collections.abc import Callable, Sequence
-from typing import Any, cast
+from typing import Any, Protocol, cast, get_type_hints
 
 import pydantic
 from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured
 from django.http import HttpResponse
+from django.urls.converters import REGISTERED_CONVERTERS
 from django.urls.resolvers import RoutePattern, URLPattern, URLResolver
 from pydantic_core import PydanticUndefined
 
@@ -65,6 +66,40 @@ def get_resolved_url_patterns(
     return resolved_urls
 
 
+class BaseConverter(Protocol):
+    regex: str
+    to_python: Callable[[str], Any]
+
+
+def _get_converter_schema(converter: BaseConverter | None) -> dict[str, Any] | None:
+    """
+    Gets the OpenAPI schema for a converter by inspecting its to_python return type.
+    Falls back to regex parsing if type annotation is not available.
+    """
+    if converter is None:
+        return None
+
+    assert _is_url_converter(converter)
+
+    # Try to get type hints from the method
+    # get_type_hints works on both bound and unbound methods
+    type_hints = get_type_hints(converter.to_python, include_extras=True)
+    return_type = type_hints.get("return")
+
+    if return_type is not None:
+        # Use Pydantic to generate schema from the return type
+        schema = pydantic.TypeAdapter(return_type).json_schema()
+        return schema
+    else:
+        logger.info("No return type found for converter %s. Is it typed?", converter)
+
+    return None
+
+
+def _is_url_converter(converter: Any) -> bool:
+    return hasattr(converter, "to_python")
+
+
 def django_path_to_openapi_url_and_parameters(
     path: str,
 ) -> tuple[str, list[dict[str, Any]]]:
@@ -72,24 +107,27 @@ def django_path_to_openapi_url_and_parameters(
     Returns an OpenAPI URL and the URL parameter specs, given a django url.
     """
 
-    # mapping django url types to openapi types
-    url_parameter_type_mapping = {
-        "int": "integer",
-        "str": "string",
-        "slug": "string",
-    }
-
+    converters = {"int": int, "str": str, "slug": str, **REGISTERED_CONVERTERS}
     parameters = []
 
     def replacer(match: re.Match[str]) -> str:
         parameter_type = match.group(1)
         parameter_name = match.group(2)
+
+        # Get the converter instance/class
+        converter_or_primitive = converters.get(parameter_type)
+
+        if _is_url_converter(converter_or_primitive):
+            schema = _get_converter_schema(converter_or_primitive)
+        else:
+            schema = pydantic.TypeAdapter(converter_or_primitive).json_schema()
+
         parameters.append(
             {
                 "name": parameter_name,
                 "in": "path",
                 "required": True,
-                "schema": {"type": url_parameter_type_mapping.get(parameter_type)},
+                "schema": schema,
             }
         )
         return "{" + parameter_name + "}"
