@@ -1,7 +1,9 @@
 from dataclasses import dataclass
-from typing import Any, TypedDict
+from typing import Any, TypedDict, TypeVar, Annotated
 
 from pydantic import BaseModel, TypeAdapter
+
+T = TypeVar("T")
 
 
 class FieldError(TypedDict):
@@ -48,3 +50,11 @@ class PublicAPIError(Exception):
 
         self.message = errors if errors is not None else [message]
         self.status_code = status_code
+
+
+class _QueryType:
+    """
+    An input type provided as a query parameter
+    """
+
+Query = Annotated[T, _QueryType]
