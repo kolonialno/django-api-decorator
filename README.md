@@ -20,7 +20,6 @@ uv add django-api-decorator
 
 Or, without uv: `pip install django-api-decorator`
 
-
 ## Usage
 
 The main interface of this library is the `@api` decorator. This handles input
@@ -84,7 +83,6 @@ urlpatterns = [
     ),
 ]
 ```
-
 
 ## OpenAPI specification
 
@@ -152,3 +150,106 @@ API_DECORATOR_SERVERS = {
 
 The servers are added to the OpenAPI specification as a list of dictionaries with
 the a requried `url` and optional `description`.
+
+## Exception handling
+
+If any part of the code execution throws an exception along the way, this will
+by default be handled as a normal exception, and return a 500 status code for
+the call. However, there are som exceptions:
+
+- django.core.exception.ValidationError returns a 400 by default
+- pydantic.ValidationError returns a 400 by default
+- model.DoesNotExist returns a 404 by default
+
+If you want to gracefully handle exceptions that might occur, you can use the
+`create_exception_handler` or `create_exception_handlers` utility decorator.
+This will catch the exception and return a specified status code and message.
+
+Use `create_exception_handler` if you only want to handle a singe exception, and
+`create_exception_handlers` if you want to handle multiple. If you're curios,
+you can read the supplied docstring for each of the functions.
+
+Example:
+
+```python
+from django.http import HttpRequest, HttpResponse
+from django_api_decorator.decorators import api
+
+from pydantic import BaseModel
+
+from alma.api_http import create_exception_handlers
+
+def adjust_quantity(*, quantity: int) -> User:
+    # Both ValueError and AssertionError can possibly be raised, normally
+    # causing a 500 server error response if they occur.
+    if quantity < 0:
+        raise ValueError("Quantity cant be bellow zero")
+
+    assert quantity > 1, "Quantity has to be above 1"
+
+
+class AdjustQuantityRequest(BaseModel):
+    quantity: int
+
+@api(method="GET")
+@create_exception_handlers((
+    # Return status 400 with "some custom message"
+    (ValueError, "Some custom message", 400),
+    # Return status 400 with original error message
+    (AssertionError, None, 400)
+))
+def my_api(request: HttpRequest, body: AdjustQuantityRequest) -> HttpResponse:
+    adjust_quantity(quantity=body.quantity)
+    return HttpResponse(status=200)
+```
+
+### Exception callbacks
+
+Sometimes, you need to access the exception being raised to extract some
+meaningful context, in that case, you can pass a exception callback instead of
+message + status code.
+
+The callback callable that takes the exception instance as a single parameter
+and returns a APIError.
+
+```python
+from django.http import HttpRequest, HttpResponse
+from django_api_decorator.decorators import api
+from django_api_decorator.types import PublicAPIError
+
+
+from pydantic import BaseModel
+
+from alma.api_http import create_exception_handlers
+
+class SomeCustomException(Exception):
+    def __init__(self, quantity: int) -> None:
+        self.quantity = quantity
+
+
+def adjust_quantity(*, quantity: int) -> User:
+    if quantity < 0:
+        raise SomeCustomException("Quantity cant be bellow zero", quantity=quantity)
+
+
+def value_error_cb(exc: SomeCustomException) -> PublicAPIError:
+    return PublicAPIError(
+        status_code=400,
+        message="Some custom message"
+        errors={
+            "quantity": exc.quantity
+        }
+    )
+
+
+class AdjustQuantityRequest(BaseModel):
+    quantity: int
+
+@api(method="GET")
+@create_exception_handlers((
+    (ValueError, value_error_cb),
+))
+def my_api(request: HttpRequest, body: AdjustQuantityRequest) -> HttpResponse:
+    adjust_quantity(quantity=body.quantity)
+    return HttpResponse(status=200)
+```
