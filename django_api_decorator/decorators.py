@@ -205,9 +205,14 @@ def api(
                 )
 
             # A 1xx, 204 or 304 response carries no content (RFC 9112, section
-            # 6.3), so there is nothing to encode the return value into.
+            # 6.3), so there is nothing to encode the return value into. The
+            # content type stays application/json: generated clients pick their
+            # parsing branch from it, so dropping it changes what they hand
+            # callers for an empty response.
             if status_forbids_content(response_status):
-                return HttpResponse(status=response_status)
+                return HttpResponse(
+                    status=response_status, content_type="application/json"
+                )
 
             # Default by_alias to the decorator provided value as would be expected
             # by the client and the view.

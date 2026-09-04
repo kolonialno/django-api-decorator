@@ -42,6 +42,9 @@ def test_status_without_content_gets_no_body(view: object, status: int) -> None:
 
     assert response.status_code == status
     assert response.content == b""
+    # Generated clients choose how to parse an empty response from the content
+    # type, so it stays what it has always been.
+    assert response["Content-Type"] == "application/json"
 
 
 def test_none_is_still_encoded_when_content_is_allowed() -> None:
