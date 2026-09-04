@@ -16,7 +16,7 @@ from pydantic.functional_validators import BeforeValidator
 from pydantic_core import PydanticUndefined
 
 from .types import ApiMeta, FieldError, PublicAPIError
-from .utils import get_list_fields, parse_form_encoded_body
+from .utils import get_list_fields, parse_form_encoded_body, status_forbids_content
 
 P = typing.ParamSpec("P")
 T = typing.TypeVar("T")
@@ -68,7 +68,8 @@ def api(
     Similarly the response body is encoded based on the type annotation for the
     return type. If the view is type annotated to return an HttpResponse object
     nothing is done to that response. In all other case the returned object is
-    attempted to be encoded to JSON.
+    attempted to be encoded to JSON, unless response_status is a status that
+    carries no content (1xx, 204, 304), which is sent with an empty body.
     """
 
     login_required = (
@@ -202,6 +203,11 @@ def api(
                     f"{func} is annotated to return an http response, but returned "
                     f"{type(response)}"
                 )
+
+            # A 1xx, 204 or 304 response carries no content (RFC 9112, section
+            # 6.3), so there is nothing to encode the return value into.
+            if status_forbids_content(response_status):
+                return HttpResponse(status=response_status)
 
             # Default by_alias to the decorator provided value as would be expected
             # by the client and the view.

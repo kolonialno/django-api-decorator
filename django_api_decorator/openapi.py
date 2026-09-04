@@ -13,6 +13,7 @@ from django.urls.resolvers import RoutePattern, URLPattern, URLResolver
 from pydantic_core import PydanticUndefined
 
 from .types import ApiMeta, OpenApiServer
+from .utils import status_forbids_content
 
 logger = logging.getLogger(__name__)
 
@@ -129,7 +130,9 @@ def paths_and_types_for_view(
 
         return schema
 
-    if api_meta.response_adapter:
+    if api_meta.response_adapter and not status_forbids_content(
+        api_meta.response_status
+    ):
         response_schema = api_meta.response_adapter.json_schema(
             ref_template=schema_ref,
             by_alias=generate_schema_by_alias,
