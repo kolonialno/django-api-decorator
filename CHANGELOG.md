@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.0.3](https://github.com/kolonialno/django-api-decorator/compare/v1.0.2...v1.0.3) (2026-09-07)
+
+
+### Bug Fixes
+
+* keep the json content type on empty responses ([d2e2ae6](https://github.com/kolonialno/django-api-decorator/commit/d2e2ae61e4d2519d71755c70a87532a16ded1357))
+* send no body for statuses that forbid content ([bd59f58](https://github.com/kolonialno/django-api-decorator/commit/bd59f5804a889545f3867af5282a5628372efe8b))
+* send no body for statuses that forbid content ([#60](https://github.com/kolonialno/django-api-decorator/issues/60)) ([5662da4](https://github.com/kolonialno/django-api-decorator/commit/5662da434b402eccd123543a23d40aa100cdb006))
+
 ## [1.0.2](https://github.com/kolonialno/django-api-decorator/compare/v1.0.1...v1.0.2) (2026-08-25)
 
 
