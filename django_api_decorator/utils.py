@@ -105,3 +105,12 @@ def parse_form_encoded_body(
         key: request.POST.getlist(key) if key in list_fields else request.POST.get(key)
         for key in request.POST
     }
+
+
+def status_forbids_content(status: int) -> bool:
+    """
+    Whether a response with this status cannot carry content, per RFC 9112,
+    section 6.3. Django's test client removes the body from these, so a test
+    that goes through it cannot see one being written.
+    """
+    return 100 <= status < 200 or status in (204, 304)
